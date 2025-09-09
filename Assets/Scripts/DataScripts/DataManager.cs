@@ -1,9 +1,8 @@
-using UnityEditor.Search;
 using UnityEngine;
 
-public class DataDelivery : MonoBehaviour
+public class DataManager : MonoBehaviour
 {
-    public static DataDelivery Instance;
+    public static DataManager Instance { get; private set; }
 
     public string playerName;
 
