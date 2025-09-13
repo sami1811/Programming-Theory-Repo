@@ -1,30 +1,24 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TreeSpawner : MonoBehaviour
+public class GlobalSpawner : MonoBehaviour
 {
-    [SerializeField] List<GameObject> plane = new List<GameObject>();
+    [Header("Spawn Area Settings")]
+    public List<GameObject> spawnAreas = new List<GameObject>();
 
-    [SerializeField] private GameObject treePrefab;
-    
-    [SerializeField] private int numberOfObjects;
-    [SerializeField] private float minDistance = 5f;
+    [Header("Spawner Settings")]
+    public GameObject objectPrefab;
+    public int numberOfObjects;
+    public float minDistance = 5f;
+    public float yOffSet = 0.99f;
+    public bool spawnOnStart = false;
 
-    [Header("Optional Settings")]
-    [SerializeField] private float yOffSet = 0.99f;
-    [SerializeField] private bool spawnOnStart = false;
-    [SerializeField] private int maxSpawnAttempts = 10;
+    [Header("Spawn Loop Settings")]
+    public int maxSpawnAttempts = 10;
 
-    private void Start()
+    protected virtual void SpawnWithoutOverlap(GameObject objectToSpawn)
     {
-        if (spawnOnStart)
-        {
-            SpawnWithoutOverlap();
-        }
-    }
-
-    public void SpawnWithoutOverlap()
-    {
+        objectToSpawn = objectPrefab;
         Vector3[] spawnedPositions = new Vector3[numberOfObjects];
         int spawnedCounts = 0;
         int attempts = 0;
@@ -36,7 +30,7 @@ public class TreeSpawner : MonoBehaviour
 
             if(IsValidPosition(randomPos, spawnedPositions, spawnedCounts))
             {
-                Instantiate(treePrefab, randomPos, treePrefab.transform.rotation);
+                Instantiate(objectToSpawn, randomPos, objectToSpawn.transform.rotation);
                 spawnedPositions[spawnedCounts] = randomPos;
                 spawnedCounts++;
             }
@@ -45,14 +39,14 @@ public class TreeSpawner : MonoBehaviour
         }
 
         if (spawnedCounts < numberOfObjects)
-            Debug.Log("Could only spawned " + spawnedCounts + " out of " + numberOfObjects + " trees due to space constraints.");
+            Debug.Log("Could only spawned " + spawnedCounts + " out of " + numberOfObjects + " " + objectToSpawn.name + " due to space constraints.");
         else
-            Debug.Log("Sucessfully spawned " + numberOfObjects + " trees without causing any overlaps.");
+            Debug.Log("Sucessfully spawned " + numberOfObjects + " " + objectToSpawn.name + " without causing any overlaps.");
     }
 
     private Vector3 GetRandomPosition()
     {
-        Renderer planeRenderer = plane[Random.Range(0, plane.Count)].GetComponent<Renderer>();
+        Renderer planeRenderer = spawnAreas[Random.Range(0, spawnAreas.Count)].GetComponent<Renderer>();
 
         if (planeRenderer == null)
         {

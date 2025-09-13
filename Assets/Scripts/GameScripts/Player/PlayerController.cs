@@ -1,23 +1,35 @@
+using Unity.Mathematics;
 using UnityEngine;
 
-public class PlayerControlller : MonoBehaviour
+public class PlayerController : MonoBehaviour
 {
     [Header("Player Settings")]
     [SerializeField] private float moveSpeed = 0;
-    [SerializeField] private float mouseSensitivity = 0;
     [SerializeField] private Camera playerCamera;
 
     [Header("Bound Settings")]
     [SerializeField] private float xBound = 0f;
     [SerializeField] private float zBound = 0f;
 
-    private float yRotation= 0f;
+    [Header("Player Marker Settings")]
+    [SerializeField] private RectTransform playerMarkerTransform;
+    [SerializeField] private float animationSpeed = 0f;
+
     private LayerMask groundLayer = 1;
+
+    private void Awake()
+    {
+        if(playerMarkerTransform == null)
+        {
+            playerMarkerTransform = GameObject.Find("PlayerMarkerImage").GetComponentInChildren<RectTransform>();
+        }
+    }
 
     private void Update()
     {
         MovePlayer();
         RotatePlayer();
+        AnimatePlayerMarker();
     }
 
     private void MovePlayer()
@@ -43,15 +55,6 @@ public class PlayerControlller : MonoBehaviour
 
     private void RotatePlayer()
     {
-        /*Quaternion rotatePlayer = transform.rotation;
-
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
-
-        yRotation += mouseX;
-        rotatePlayer = Quaternion.Euler( 0, yRotation, 0);
-        transform.rotation = rotatePlayer;*/
-
         Vector3 mouseScreenPosition = Input.mousePosition;
         Ray ray = playerCamera.ScreenPointToRay(mouseScreenPosition);
 
@@ -65,5 +68,17 @@ public class PlayerControlller : MonoBehaviour
                 transform.rotation = Quaternion.LookRotation(direction);
             }
         }
+    }
+
+    private void AnimatePlayerMarker()
+    {
+        if (playerMarkerTransform != null)
+        {
+            float t = Mathf.PingPong(Time.time * animationSpeed, 1f);
+            float animateY = Mathf.Lerp(1.5f, 2f, t);
+            playerMarkerTransform.position = transform.position + new Vector3(0, animateY, 0);
+        }
+        else
+            Debug.LogWarning("Assign Player Marker RectTransform.");
     }
 }
