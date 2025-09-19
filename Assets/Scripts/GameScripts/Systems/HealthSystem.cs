@@ -4,17 +4,20 @@ using UnityEngine;
 
 public class HealthSystem : MonoBehaviour, IDamageable
 {
+    [Header("Settings")]
     [SerializeField] protected int maxHealth = 100;
     [SerializeField] protected int damagePerHit = 50;
     [SerializeField] protected TMP_Text healthText;
     [SerializeField] protected Canvas healthCanvas;
 
-    private int currentHealth;
+    protected int currentHealth;
+
     private RectTransform canvasTransform;
+    private PoolingSystem parentPool;
     private Camera mainCamera;
     private Vector3 healthBarOffset = new Vector3(0, 4, 0);
     private Vector3 healthBarScale = new Vector3(0.02f, 0.02f, 0.02f);
-
+    
     protected virtual void Awake()
     {
         InitializeAwake();
@@ -23,6 +26,14 @@ public class HealthSystem : MonoBehaviour, IDamageable
     protected virtual void Start()
     {
         InitializeStart();
+    }
+
+    protected virtual void LateUpdate()
+    {
+        if (healthCanvas != null && healthCanvas.gameObject.activeInHierarchy)
+        {
+            HealthFacesCamera();
+        }
     }
 
     private void InitializeStart()
@@ -36,8 +47,6 @@ public class HealthSystem : MonoBehaviour, IDamageable
         {
             Debug.LogWarning("No Collider is attached to " + gameObject.name);
         }
-
-        Invoke(nameof(HealthCanvasSettings), 0.5f);
     }
 
     private void InitializeAwake()
@@ -61,12 +70,32 @@ public class HealthSystem : MonoBehaviour, IDamageable
         UpdateHealthUI();
     }
 
-    protected virtual void Update()
+    private void OnEnable()
     {
-        if (healthCanvas != null && healthCanvas.gameObject.activeInHierarchy)
+        HealthCanvasSettings();
+    }
+
+    public void InitializeForPool(PoolingSystem pool)
+    {
+        parentPool = pool;
+        Debug.Log($"{gameObject.name} is initialized for pooling.");
+    }
+
+    protected virtual void OnPoolReturn()
+    {
+        if (parentPool != null)
         {
-            HealthFacesCamera();
+            parentPool.ReturnObject(this.gameObject);
+            gameObject.SetActive(false);
+            Debug.Log($"{gameObject.name} is returned to pool sucessully.");
         }
+    }
+
+    public void OnPoolRetrieve()
+    {
+        currentHealth = maxHealth;
+        UpdateHealthUI();
+        Debug.Log($"{gameObject.name} was retrieved sucessfully with full health.");
     }
 
     public virtual void TakeDamage(int damage)
@@ -99,7 +128,7 @@ public class HealthSystem : MonoBehaviour, IDamageable
     private void Die()
     {
         Debug.Log(gameObject.name + " is dead!");
-        Destroy(gameObject);
+        OnPoolReturn();
     }
 
     protected void UpdateHealthUI()

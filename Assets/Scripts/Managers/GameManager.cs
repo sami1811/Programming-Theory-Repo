@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 
-public class GameUIManager : MonoBehaviour
+public class GameManager : MonoBehaviour
 {
     [SerializeField] private TMP_Text playerIntro;
     [SerializeField] private GameObject rulesPanel;
