@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 
-public class GlobalSpawner : PoolingSystem
+[RequireComponent(typeof(PoolingSystem))]
+public class SpawningSystem : MonoBehaviour
 {
     [Header("Spawn Area Settings")]
     public List<GameObject> spawnAreas = new List<GameObject>();
@@ -14,6 +14,8 @@ public class GlobalSpawner : PoolingSystem
 
     [Header("Spawn Loop Settings")]
     public int maxSpawnAttempts = 2;
+
+    private PoolingSystem poolingSystem;
 
     // Internal dictionary of spawned objects and their positions
     private readonly Dictionary<GameObject, Vector3> spawnedMap = new Dictionary<GameObject, Vector3>();
@@ -26,22 +28,37 @@ public class GlobalSpawner : PoolingSystem
 
     private void Awake()
     {
-        InitializeOnAwake();
+        InitializeAwake();
     }
 
-    protected void InitializeOnAwake()
+    private void Start()
     {
-        InitializePool();
-        Debug.Log("Pool has been initialized successfully!");
+        InitializeStart();
     }
 
-    protected void SpawnInitialObject()
+    private void InitializeStart()
+    {
+        SpawnInitialObject();
+    }
+
+    private void InitializeAwake()
+    {
+        poolingSystem = GetComponent<PoolingSystem>();
+
+        if (poolingSystem == null)
+        {
+            Debug.LogError("PoolingSystem component missing on this GameObject.");
+            return;
+        }
+    }
+
+    public void SpawnInitialObject()
     {
         int successfulSpawns = 0;
         int attempts = 0;
-        int maxAttempts = initialPoolSize * maxSpawnAttempts;
+        int maxAttempts = poolingSystem.InitialPoolSize * maxSpawnAttempts;
 
-        while (successfulSpawns < initialPoolSize && attempts < maxAttempts)
+        while (successfulSpawns < poolingSystem.InitialPoolSize && attempts < maxAttempts)
         {
             if (SpawnWithoutOverlap())
                 successfulSpawns++;
@@ -49,12 +66,20 @@ public class GlobalSpawner : PoolingSystem
             attempts++;
         }
 
-        Debug.Log($"Successfully spawned {successfulSpawns} out of {initialPoolSize} {objectPrefab.name}(s)");
+        if (poolingSystem.ObjectPrefab == null)
+        {
+            Debug.LogWarning("Object prefab is null!");
+            return;
+        }
 
-        if (successfulSpawns < initialPoolSize)
+        Debug.Log(
+            $"Successfully spawned {successfulSpawns} out of {poolingSystem.InitialPoolSize} {poolingSystem.ObjectPrefab.name}(s)"
+        );
+
+        if (successfulSpawns < poolingSystem.InitialPoolSize)
         {
             Debug.LogWarning(
-                $"Could only spawn {successfulSpawns} out of {initialPoolSize} " +
+                $"Could only spawn {successfulSpawns} out of {poolingSystem.InitialPoolSize} " +
                 $"due to space constraints or max attempts reached."
             );
         }
@@ -86,7 +111,7 @@ public class GlobalSpawner : PoolingSystem
 
         if (validPositionFound)
         {
-            GameObject objectToSpawn = GetObject();
+            GameObject objectToSpawn = poolingSystem.GetObject();
 
             if (objectToSpawn != null)
             {
@@ -113,7 +138,7 @@ public class GlobalSpawner : PoolingSystem
         {
             position = ApplyOffsetY(position);
 
-            GameObject objectToSpawn = GetObject();
+            GameObject objectToSpawn = poolingSystem.GetObject();
 
             if (objectToSpawn != null)
             {
@@ -142,7 +167,8 @@ public class GlobalSpawner : PoolingSystem
         {
             yield return new WaitForSeconds(delay);
 
-            if (ActiveObjectCount() < maxPoolSize)
+            if (poolingSystem.ActiveObjectCount() < poolingSystem.MaxPoolSize &&
+                poolingSystem.TotalObjectCount() < poolingSystem.MaxPoolSize)
             {
                 if (DelayedSpawn(numberOfTries))
                 {
@@ -175,7 +201,7 @@ public class GlobalSpawner : PoolingSystem
                 continue; // Try again with different position
 
             spawnPos = ApplyOffsetY(spawnPos);
-            GameObject objectToSpawn = GetObject();
+            GameObject objectToSpawn = poolingSystem.GetObject();
 
             if (objectToSpawn == null)
             {
@@ -212,7 +238,7 @@ public class GlobalSpawner : PoolingSystem
         if (IsValidPosition(randomPos))
         {
             randomPos = ApplyOffsetY(randomPos);
-            GameObject objectToSpawn = GetObject();
+            GameObject objectToSpawn = poolingSystem.GetObject();
 
             if (objectToSpawn != null)
             {
@@ -266,7 +292,7 @@ public class GlobalSpawner : PoolingSystem
         return true;
     }
 
-    public override void ReturnObject(GameObject objectToReturn)
+    private void ReturnObject(GameObject objectToReturn)
     {
         if (objectToReturn == null)
             return;
@@ -274,7 +300,7 @@ public class GlobalSpawner : PoolingSystem
         if (spawnedMap.ContainsKey(objectToReturn))
             spawnedMap.Remove(objectToReturn);
 
-        base.ReturnObject(objectToReturn);
+        poolingSystem.ReturnObject(objectToReturn);
     }
 
     /// <summary>

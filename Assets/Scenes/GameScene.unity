@@ -938,6 +938,75 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 865071370}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &888408780
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 888408781}
+  - component: {fileID: 888408782}
+  - component: {fileID: 888408783}
+  m_Layer: 0
+  m_Name: TreeManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &888408781
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 888408780}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.12809, y: 4.54623, z: -14.54488}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &888408782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 888408780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48c688c3b5af13f43b2b3c752827bb59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TreePoolManager
+  objectPrefab: {fileID: 4985764532660486543, guid: 0e14ee6ed3d25cc4e9233c751b245789, type: 3}
+  initialPoolSize: 12
+  maxPoolSize: 35
+  expansionBatchSize: 5
+--- !u!114 &888408783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 888408780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7161624578b79f40a5edb2ab4123d71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawningSystem
+  spawnAreas:
+  - {fileID: 2027290646}
+  - {fileID: 1822037105}
+  - {fileID: 967745751}
+  - {fileID: 156909561}
+  minDistance: 5
+  yOffset: 0.99
+  maxSpawnAttempts: 2
 --- !u!1 &936689195
 GameObject:
   m_ObjectHideFlags: 0
@@ -1330,63 +1399,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1163373572}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1262487816
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1262487817}
-  - component: {fileID: 1262487818}
-  m_Layer: 0
-  m_Name: TreeManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1262487817
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1262487816}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1262487818
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1262487816}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 48c688c3b5af13f43b2b3c752827bb59, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TreeSpawner
-  objectPrefab: {fileID: 4985764532660486543, guid: 0e14ee6ed3d25cc4e9233c751b245789, type: 3}
-  initialPoolSize: 5
-  maxPoolSize: 7
-  spawnAreas:
-  - {fileID: 2027290646}
-  - {fileID: 1822037105}
-  - {fileID: 967745751}
-  - {fileID: 156909561}
-  minDistance: 5
-  yOffset: 0.99
-  maxSpawnAttempts: 2
-  respawnDelay: 7
-  maxAttempts: 5
 --- !u!1 &1514962260
 GameObject:
   m_ObjectHideFlags: 0
@@ -1497,7 +1509,7 @@ MonoBehaviour:
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
-  m_RendererIndex: -1
+  m_RendererIndex: 0
   m_VolumeLayerMask:
     serializedVersion: 2
     m_Bits: 1
@@ -1518,7 +1530,7 @@ MonoBehaviour:
   m_RequiresColorTexture: 0
   m_TaaSettings:
     m_Quality: 3
-    m_FrameInfluence: 0.1
+    m_FrameInfluence: 0.100000024
     m_JitterScale: 1
     m_MipBias: 0
     m_VarianceClampScale: 0.9
@@ -1905,7 +1917,7 @@ GameObject:
   - component: {fileID: 1666478679}
   - component: {fileID: 1666478683}
   m_Layer: 5
-  m_Name: GameManager
+  m_Name: GameUIManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2863,9 +2875,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2021474258270410548, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5687258901462145879, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
       propertyPath: m_Name
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 5687258901462145879, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6318271158895126242, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6318271158895126242, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
       propertyPath: playerCamera
@@ -2931,4 +2955,4 @@ SceneRoots:
   - {fileID: 379762571}
   - {fileID: 4363864256248385674}
   - {fileID: 826844278}
-  - {fileID: 1262487817}
+  - {fileID: 888408781}
