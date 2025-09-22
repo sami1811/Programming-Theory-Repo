@@ -6,23 +6,32 @@ using UnityEngine;
 public class SpawningSystem : MonoBehaviour
 {
     [Header("Spawn Area Settings")]
+    [Tooltip("List of game objects that define spawnable areas. Each must have a Renderer (e.g., plane).")]
     public List<GameObject> spawnAreas = new List<GameObject>();
 
     [Header("Spawner Settings")]
+    [Tooltip("Minimum allowed distance between spawned objects.")]
     public float minDistance = 5f;
+
+    [Tooltip("Vertical offset applied to all spawned objects (to place them above the surface).")]
     public float yOffset = 0.99f;
 
     [Header("Spawn Loop Settings")]
+    [Tooltip("Maximum number of attempts to find a valid spawn position per object.")]
     public int maxSpawnAttempts = 2;
 
+    // Reference to the pooling system that provides/recycles objects
     private PoolingSystem poolingSystem;
 
-    // Internal dictionary of spawned objects and their positions
+    // Internal dictionary mapping active objects to their spawn positions
     private readonly Dictionary<GameObject, Vector3> spawnedMap = new Dictionary<GameObject, Vector3>();
 
-    // Public read-only view for safe external access
+    /// <summary>
+    /// Read-only access to the current spawned object-position map.
+    /// </summary>
     public IReadOnlyDictionary<GameObject, Vector3> SpawnedMap => spawnedMap;
 
+    // Respawn coroutine state
     private Coroutine respawnRoutine;
     private bool isRespawning;
 
@@ -36,11 +45,17 @@ public class SpawningSystem : MonoBehaviour
         InitializeStart();
     }
 
+    /// <summary>
+    /// Spawns the initial set of pooled objects at random valid positions.
+    /// </summary>
     private void InitializeStart()
     {
         SpawnInitialObject();
     }
 
+    /// <summary>
+    /// Finds the PoolingSystem component on this GameObject.
+    /// </summary>
     private void InitializeAwake()
     {
         poolingSystem = GetComponent<PoolingSystem>();
@@ -52,6 +67,10 @@ public class SpawningSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Attempts to spawn as many objects as the initial pool size allows.
+    /// Respects minimum distance and maximum attempts.
+    /// </summary>
     public void SpawnInitialObject()
     {
         int successfulSpawns = 0;
@@ -85,6 +104,10 @@ public class SpawningSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Attempts to spawn a pooled object at a random position that does not overlap with existing objects.
+    /// </summary>
+    /// <returns>True if successful, false otherwise.</returns>
     protected virtual bool SpawnWithoutOverlap()
     {
         if (spawnAreas.Count < 1)
@@ -96,6 +119,7 @@ public class SpawningSystem : MonoBehaviour
         Vector3 spawnPosition = Vector3.zero;
         bool validPositionFound = false;
 
+        // Try multiple times to find a valid position
         for (int i = 0; i < maxSpawnAttempts; ++i)
         {
             Vector3 randomPos = GetRandomPosition();
@@ -115,7 +139,7 @@ public class SpawningSystem : MonoBehaviour
 
             if (objectToSpawn != null)
             {
-                // Optional: warn if this object was already in the map
+                // Prevent double assignment
                 if (spawnedMap.ContainsKey(objectToSpawn))
                 {
                     Debug.LogWarning($"{objectToSpawn.name} is being respawned without being returned. Retry spawning!");
@@ -132,6 +156,9 @@ public class SpawningSystem : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Spawns an object at a specific custom position if valid.
+    /// </summary>
     protected virtual void SpawnAtCustomPosition(Vector3 position)
     {
         if (IsValidPosition(position))
@@ -159,7 +186,10 @@ public class SpawningSystem : MonoBehaviour
         }
     }
 
-    protected IEnumerator RespawnAtRandomAfterDelay(float delay, int numberOfTries)
+    /// <summary>
+    /// Coroutine that retries spawning an object after a delay until successful.
+    /// </summary>
+    private IEnumerator RespawnAtRandomAfterDelay(float delay, int numberOfTries)
     {
         isRespawning = true;
 
@@ -167,8 +197,7 @@ public class SpawningSystem : MonoBehaviour
         {
             yield return new WaitForSeconds(delay);
 
-            if (poolingSystem.ActiveObjectCount() < poolingSystem.MaxPoolSize &&
-                poolingSystem.TotalObjectCount() < poolingSystem.MaxPoolSize)
+            if (poolingSystem.ActiveObjectCount() < poolingSystem.MaxPoolSize)
             {
                 if (DelayedSpawn(numberOfTries))
                 {
@@ -178,19 +207,20 @@ public class SpawningSystem : MonoBehaviour
                 else
                 {
                     Debug.Log("Respawn failed, retrying after delay...");
-                    // loop will retry
                 }
             }
             else
             {
                 Debug.Log("Pool full, waiting before retry...");
-                // loop will retry automatically after delay
             }
         }
 
         isRespawning = false;
     }
 
+    /// <summary>
+    /// Attempts to spawn an object with limited retries.
+    /// </summary>
     private bool DelayedSpawn(int maxRetries)
     {
         for (int attempt = 0; attempt < maxRetries; attempt++)
@@ -198,7 +228,7 @@ public class SpawningSystem : MonoBehaviour
             Vector3 spawnPos = GetRandomPosition();
 
             if (!IsValidPosition(spawnPos))
-                continue; // Try again with different position
+                continue;
 
             spawnPos = ApplyOffsetY(spawnPos);
             GameObject objectToSpawn = poolingSystem.GetObject();
@@ -225,12 +255,18 @@ public class SpawningSystem : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Starts a respawn coroutine that retries until an object is spawned.
+    /// </summary>
     public void StartRespawn(float delay, int tries)
     {
-        if (isRespawning) return; // already running
+        if (isRespawning) return;
         respawnRoutine = StartCoroutine(RespawnAtRandomAfterDelay(delay, tries));
     }
 
+    /// <summary>
+    /// Spawns an object manually at a random valid position.
+    /// </summary>
     protected virtual void SpawnManualAtRandom()
     {
         Vector3 randomPos = GetRandomPosition();
@@ -255,6 +291,9 @@ public class SpawningSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Picks a random position inside a randomly chosen spawn area's renderer bounds.
+    /// </summary>
     private Vector3 GetRandomPosition()
     {
         if (spawnAreas.Count == 0)
@@ -281,6 +320,9 @@ public class SpawningSystem : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// Checks whether the given position is far enough from all currently spawned objects.
+    /// </summary>
     private bool IsValidPosition(Vector3 position)
     {
         float minDistSq = minDistance * minDistance;
@@ -292,6 +334,9 @@ public class SpawningSystem : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Returns an object back to the pool and removes it from the spawned map.
+    /// </summary>
     private void ReturnObject(GameObject objectToReturn)
     {
         if (objectToReturn == null)

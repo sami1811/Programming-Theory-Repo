@@ -1,13 +1,13 @@
 using TMPro;
 using UnityEngine;
 
-public class HealthCanvasSpawner : PoolingSystem
+public class HealthCanvasManager : PoolingSystem
 {
     [Header("Canvas Settings")]
     [SerializeField] private Vector3 healthBarOffset;
     [SerializeField] private Vector3 healthBarScale;
 
-    public static HealthCanvasSpawner Instance { get; private set; }
+    public static HealthCanvasManager Instance { get; private set; }
 
     protected override void Awake()
     {

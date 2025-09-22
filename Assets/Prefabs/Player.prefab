@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5362795875392287296}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Weapons
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -41,7 +41,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2647249420754414633}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: PlayerMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -78,7 +78,7 @@ GameObject:
   - component: {fileID: 1502894641543728745}
   - component: {fileID: 6318271158895126242}
   - component: {fileID: 8848117716995978009}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -238,7 +238,7 @@ GameObject:
   - component: {fileID: 687033289524063211}
   - component: {fileID: 1530005784078206603}
   - component: {fileID: 5704013906790284304}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Gun
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -348,7 +348,7 @@ GameObject:
   - component: {fileID: 5055480808775551651}
   - component: {fileID: 2933046025688674742}
   - component: {fileID: 308651503937459408}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: PlayerMarkerImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -421,7 +421,7 @@ GameObject:
   - component: {fileID: 7190222842608564117}
   - component: {fileID: 923531598721475222}
   - component: {fileID: 3829670997855836629}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}

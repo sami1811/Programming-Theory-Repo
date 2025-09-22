@@ -3,10 +3,11 @@ using UnityEngine;
 public class HealthSystem : MonoBehaviour, IDamageable
 {
     [Header("Health Settings")]
-    [SerializeField] protected int maxHealth = 100;
-    [SerializeField] protected int damagePerHit = 50;
+    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private int damagePerHit = 50;
+    [SerializeField] private LayerMask damageLayer;
 
-    protected int currentHealth;
+    private int currentHealth;
 
     private PoolingSystem poolManager;
 
@@ -36,7 +37,7 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Player") && IsAlive())
+        if (((1 << collision.gameObject.layer) & damageLayer) != 0)
         {
             TakeDamage(damagePerHit);
         }

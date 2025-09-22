@@ -217,3 +217,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealthSystem
   maxHealth: 100
+  damagePerHit: 50
+  damageLayer:
+    serializedVersion: 2
+    m_Bits: 8
