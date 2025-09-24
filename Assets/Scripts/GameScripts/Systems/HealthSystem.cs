@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class HealthSystem : MonoBehaviour, IDamageable
@@ -13,20 +14,21 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
     private void OnEnable()
     {
-        RestoreOnRetrieve();
-        
+        RestoreOnEnable();
+        //Invoke(nameof(RegisterOnDelay), 0.5f);
     }
 
     private void Start()
     {
-        AssignOnStart();
+        InitializeStart();
     }
 
-    private void AssignOnStart()
+    private void InitializeStart()
     {
         if(poolManager == null)
         {
             poolManager = GetComponentInParent<PoolingSystem>();
+            RegisterOnDelay();
             Debug.Log("Pool Manager found.");
         }
         else
@@ -43,17 +45,14 @@ public class HealthSystem : MonoBehaviour, IDamageable
         }
     }
 
-    public void RestoreOnRetrieve()
-    {
-        currentHealth = maxHealth;
-    }
-
     public virtual void TakeDamage(int damage)
     {
         if (damage < 0)
             return;
 
         currentHealth = Mathf.Max(0, currentHealth - damage);
+
+        HealthBarManager.Instance.UpdateHealthText(this, GetCurrentHealth());
 
         Debug.Log(gameObject.name + " took " + damage + " now health is " + currentHealth);
 
@@ -76,6 +75,18 @@ public class HealthSystem : MonoBehaviour, IDamageable
     public void Die()
     {
         Debug.Log(gameObject.name + " is dead!");
+        HealthBarManager.Instance.UnregisterHealthSystems(this);
         poolManager.ReturnObject(gameObject);
+    }
+
+    private void RestoreOnEnable()
+    {
+        currentHealth = maxHealth;
+    }
+
+    private void RegisterOnDelay()
+    {
+        HealthBarManager.Instance.RegisterHealthSystems(this);
+        HealthBarManager.Instance.UpdateHealthText(this, GetCurrentHealth());
     }
 }

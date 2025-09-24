@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-[DefaultExecutionOrder(-100)]
+[DefaultExecutionOrder(-1000)]
 public class PoolingSystem : MonoBehaviour, IPoolable
 {
     [Header("Pool Settings")]
