@@ -1,4 +1,3 @@
-using Unity.Mathematics;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -12,16 +11,16 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float zBound = 0f;
 
     [Header("Player Marker Settings")]
-    [SerializeField] private RectTransform playerMarkerTransform;
+    [SerializeField] private GameObject playerMarkerObj;
     [SerializeField] private float animationSpeed = 0f;
 
-    private LayerMask groundLayer = 1;
+    [SerializeField] private LayerMask groundLayer = 1;
 
     private void Awake()
     {
-        if(playerMarkerTransform == null)
+        if (playerMarkerObj == null)
         {
-            playerMarkerTransform = GameObject.Find("PlayerMarkerImage").GetComponentInChildren<RectTransform>();
+            playerMarkerObj = GameObject.Find("PlayerMarker").GetComponent<GameObject>();
         }
     }
 
@@ -72,13 +71,22 @@ public class PlayerController : MonoBehaviour
 
     private void AnimatePlayerMarker()
     {
-        if (playerMarkerTransform != null)
+        if (playerMarkerObj != null)
         {
             float t = Mathf.PingPong(Time.time * animationSpeed, 1f);
             float animateY = Mathf.Lerp(1.5f, 2f, t);
-            playerMarkerTransform.position = transform.position + new Vector3(0, animateY, 0);
+            playerMarkerObj.transform.position = transform.position + new Vector3(0, animateY, 0);
         }
-        else
-            Debug.LogWarning("Assign Player Marker RectTransform.");
     }
 }
+
+
+/*private void AnimatePlayerMarker()
+{
+    if (playerMarkerObj != null)
+    {
+        float t = Mathf.PingPong(Time.time * animationSpeed, 1f);
+        float animateY = Mathf.Lerp(1.5f, 2f, t);
+        playerMarkerObj.transform.position = transform.position + new Vector3(0, animateY, 0);
+    }
+}*/

@@ -1,51 +1,36 @@
 using System.Collections.Generic;
 using TMPro;
-using Unity.Mathematics;
 using UnityEngine;
 
-[DefaultExecutionOrder(-100)]
 public class HealthBarManager : PoolingSystem
 {
     public static HealthBarManager Instance { get; private set; }
 
-    [Header("Canvas Scale and Position")]
+    [Header("Canvas Settings")]
     [SerializeField] private Vector3 healthBarOffset;
     [SerializeField] private Vector3 healthBarScale;
+    [SerializeField] private float showAtDistance = 5f;
 
-    [Header("Canvas Visibality Settings")]
-    [SerializeField] private float showAtDistance;
-
-    // Player tracking for distance calculations
     [Header("Player Settings")]
     [SerializeField] private Transform playerTransform;
 
-    // Registration and tracking
     private Dictionary<HealthSystem, GameObject> activeCanvases = new Dictionary<HealthSystem, GameObject>();
+    private Dictionary<HealthSystem, TMP_Text> healthText = new Dictionary<HealthSystem, TMP_Text>();
     private HashSet<HealthSystem> registeredHealthSystems = new HashSet<HealthSystem>();
 
-    private Canvas healthCanvas;
     private Camera mainCamera;
-    private RectTransform canvasTransform;
+    private float updateInterval = 0.1f;
+    private float nextUpdateTime = 0f;
 
     protected override void Awake()
     {
         InitializeAwake();
     }
 
-    private void Update()
-    {
-        if(playerTransform == null)
-        {
-            return;
-        }
-
-        UpdateCanvasVisibility();
-        UpdateActiveCanvasPositions();
-    }
-
     private void InitializeAwake()
     {
         base.Awake();
+
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -53,49 +38,85 @@ public class HealthBarManager : PoolingSystem
         }
 
         Instance = this;
-
-        if(mainCamera == null)
-        {
-            mainCamera = Camera.main;
-
-            if(mainCamera == null)
-            {
-                Debug.LogError("$Main camera is not found!");
-            }
-        }
+        mainCamera = Camera.main;
 
         if (playerTransform == null)
         {
-            playerTransform = Camera.main?.transform;
-
-            if (playerTransform == null)
-            {
-                Debug.LogError($"Player transform is not assigned in inspector!");
-            }
-        }
-
-        if (healthCanvas == null)
-        {
-            healthCanvas = objectPrefab?.GetComponentInChildren<Canvas>();
-
-            if (healthCanvas == null)
-            {
-                Debug.LogError($"Object prefab is missing canvas component!");
-            }
-        }
-
-        if (canvasTransform == null)
-        {
-            canvasTransform = objectPrefab?.GetComponentInChildren<RectTransform>();
-
-            if (canvasTransform == null)
-            {
-                Debug.LogError($"Object prefab is missing rect transform component!");
-            }
+            playerTransform = mainCamera?.transform;
         }
     }
 
-    private void UpdateCanvasVisibility()
+    private void Update()
+    {
+        if(playerTransform == null) return;
+
+        if (Time.time >= nextUpdateTime)
+        {
+            UpdateCanvasStates();
+            nextUpdateTime += updateInterval;
+        }
+
+        //UpdateCanvasVisibility();
+        //UpdateActiveCanvasPositions();
+    }
+
+    private void UpdateCanvasStates()
+    {
+        float showDistanceSqr = showAtDistance * showAtDistance;
+
+        // Create a temp list to avoid modifying collection during iteration
+        List<HealthSystem> toUnregister = new List<HealthSystem>();
+
+        foreach (HealthSystem hs in registeredHealthSystems)
+        {
+            if (hs == null)
+            {
+                toUnregister.Add(hs);
+                continue;
+            }
+
+            float distanceSqr = (playerTransform.position - hs.transform.position).sqrMagnitude;
+            bool withinRange = distanceSqr <= showDistanceSqr;
+
+            if (withinRange)
+            {
+                // Ensure canvas exists
+                if (!activeCanvases.TryGetValue(hs, out GameObject canvasObj) || canvasObj == null)
+                {
+                    AssignCanvas(hs);
+                    canvasObj = activeCanvases[hs];
+                }
+
+                // Update position + rotation
+                if (canvasObj != null)
+                {
+                    canvasObj.transform.position = hs.transform.position + healthBarOffset;
+
+                    if (mainCamera != null)
+                    {
+                        Vector3 lookDir = canvasObj.transform.position - mainCamera.transform.position;
+                        canvasObj.transform.rotation = Quaternion.LookRotation(lookDir);
+                    }
+                }
+            }
+            else
+            {
+                // Hide if active but too far
+                if (activeCanvases.ContainsKey(hs))
+                {
+                    ReturnCanvas(hs);
+                }
+            }
+        }
+
+        // Cleanup null health systems
+        foreach (var dead in toUnregister)
+        {
+            registeredHealthSystems.Remove(dead);
+        }
+    }
+
+    /*private void UpdateCanvasVisibility()
     {
         List<HealthSystem> hsToProcess = new List<HealthSystem>(registeredHealthSystems);
 
@@ -121,53 +142,55 @@ public class HealthBarManager : PoolingSystem
         }
     }
 
+    private void UpdateActiveCanvasPositions()
+    {
+        foreach (var hsc in activeCanvases)
+        {
+            HealthSystem healthSystem = hsc.Key;
+            GameObject canvasObj = hsc.Value;
+
+            if (healthSystem != null && canvasObj != null)
+            {
+                canvasObj.transform.position = healthSystem.transform.position + healthBarOffset;
+
+                if (mainCamera != null)
+                {
+                    Vector3 lookDir = canvasObj.transform.position - mainCamera.transform.position;
+                    canvasObj.transform.rotation = Quaternion.LookRotation(lookDir);
+                }
+            }
+        }
+    }*/
+
     private bool ShouldShowCanvas(HealthSystem hs)
     {
-        if(playerTransform != null)
-        {
             float distanceSqr = (playerTransform.position - hs.transform.position).sqrMagnitude;
             float showDistanceSqr = showAtDistance * showAtDistance;
 
             return distanceSqr <= showDistanceSqr;
-        }
-
-        return false;
     }
 
     private void AssignCanvas(HealthSystem hs)
     {
-        GameObject canvas = GetObject();
+        GameObject canvasObj = GetObject();
 
-        if(canvas == null)
+        if(canvasObj == null)
         {
             Debug.LogWarning($"No canvas found!");
             return;
         }
 
-        canvas.transform.position = hs.transform.position + healthBarOffset;
+        canvasObj.transform.position = hs.transform.position + healthBarOffset;
 
-        activeCanvases[hs] = canvas;
+        TMP_Text txt = canvasObj.GetComponentInChildren<TMP_Text>();
 
-        Debug.Log($"Canvas is assigned to {hs.gameObject.name}");
-    }
-
-    private void UpdateActiveCanvasPositions()
-    {
-        foreach(var hsc in activeCanvases)
+        if(txt != null)
         {
-            HealthSystem healthSystem = hsc.Key;
-            GameObject canvas = hsc.Value;
-
-            if(healthSystem != null && canvas != null)
-            {
-                canvas.transform.position = healthSystem.transform.position + healthBarOffset;
-
-                if(mainCamera != null)
-                {
-                    canvas.transform.rotation = quaternion.LookRotation(mainCamera.transform.forward, mainCamera.transform.up);
-                }
-            }
+            txt.text = hs.GetCurrentHealth().ToString();
+            healthText[hs] = txt;
         }
+
+        activeCanvases[hs] = canvasObj;
     }
 
     public void RegisterHealthSystems(HealthSystem hs)
@@ -175,64 +198,53 @@ public class HealthBarManager : PoolingSystem
         if (hs != null && !registeredHealthSystems.Contains(hs))
         {
             registeredHealthSystems.Add(hs);
-            Debug.Log($"Registered health system {hs.gameObject.name}");
+            Debug.Log($"[HealthBarManager] Registered health system {hs.gameObject.name}");
         }
     }
 
     public void UnregisterHealthSystems(HealthSystem hs)
     {
-        if (hs != null && registeredHealthSystems.Contains(hs))
+        if (hs == null) return;
+
+        registeredHealthSystems.Remove(hs);
+
+        if(activeCanvases.ContainsKey(hs))
         {
-            registeredHealthSystems.Remove(hs);
+            ReturnCanvas(hs);
+        }
 
-            if (activeCanvases.ContainsKey(hs))
-            {
-                ReturnCanvas(hs);
-            }
+        //healthText.Remove(hs);
+    }
 
-            Debug.Log($"Unregistered health system {hs.gameObject.name}");
+    private void ReturnCanvas(HealthSystem hs)
+    {
+        if (activeCanvases.TryGetValue(hs, out GameObject canvasObj))
+        {
+            healthText.Remove(hs);
+            activeCanvases.Remove(hs);
+            OnPoolReturn(canvasObj);
         }
     }
 
     public void UpdateHealthText(HealthSystem hs, int currentHealth)
     {
-        if(hs != null && registeredHealthSystems.Contains(hs))
+        if (hs != null && healthText.TryGetValue(hs, out TMP_Text txt) && txt != null)
         {
-            if(activeCanvases.ContainsKey(hs))
-            {
-                activeCanvases[hs].GetComponentInChildren<TMP_Text>().text = currentHealth.ToString();
-            }
-        }
-    }
-
-    private void ReturnCanvas(HealthSystem hs)
-    {
-        if (activeCanvases.TryGetValue(hs, out GameObject canvas))
-        {
-            OnPoolReturn(canvas);
-            activeCanvases.Remove(hs);
+            txt.text = currentHealth.ToString();
         }
     }
 
     public override void OnPoolRetrieve(GameObject objectToRetrieve)
     {
-        Canvas canvas = objectToRetrieve.GetComponent<Canvas>();
-        RectTransform rectTransform = objectToRetrieve.GetComponent<RectTransform>();
+        base.OnPoolRetrieve(objectToRetrieve);
 
-        if (canvas != null && rectTransform != null)
+        Canvas canvas = objectToRetrieve.GetComponent<Canvas>();
+
+        if (canvas != null)
         {
             canvas.renderMode = RenderMode.WorldSpace;
-            rectTransform.localScale = healthBarScale;
-            base.OnPoolRetrieve(objectToRetrieve);
+            canvas.worldCamera = mainCamera;
+            objectToRetrieve.transform.localScale = healthBarScale;
         }
-        else
-        {
-            Debug.LogError("Canvas or RectTransform missing on retrieved object!");
-        }
-    }
-
-    public override void OnPoolReturn(GameObject objectToReturn)
-    {
-        base.OnPoolReturn(objectToReturn);
     }
 }

@@ -62,7 +62,7 @@ public class SpawningSystem : MonoBehaviour
 
         if (poolingSystem == null)
         {
-            Debug.LogError("PoolingSystem component missing on this GameObject.");
+            Debug.LogError("[Spawning system] PoolingSystem component missing on this GameObject.");
             return;
         }
     }
@@ -91,9 +91,7 @@ public class SpawningSystem : MonoBehaviour
             return;
         }
 
-        Debug.Log(
-            $"Successfully spawned {successfulSpawns} out of {poolingSystem.InitialPoolSize} {poolingSystem.ObjectPrefab.name}(s)"
-        );
+        Debug.Log($"Successfully spawned {successfulSpawns} out of {poolingSystem.InitialPoolSize} {poolingSystem.ObjectPrefab.name}(s)");
 
         if (successfulSpawns < poolingSystem.InitialPoolSize)
         {
@@ -200,8 +198,7 @@ public class SpawningSystem : MonoBehaviour
             if (poolingSystem.ActiveObjectCount() < poolingSystem.MaxPoolSize)
             {
                 if (DelayedSpawn(numberOfTries))
-                {
-                    // Successfully spawned → break out
+                { // Successfully spawned → break out
                     break;
                 }
                 else
@@ -227,8 +224,7 @@ public class SpawningSystem : MonoBehaviour
         {
             Vector3 spawnPos = GetRandomPosition();
 
-            if (!IsValidPosition(spawnPos))
-                continue;
+            if (!IsValidPosition(spawnPos)) continue;
 
             spawnPos = ApplyOffsetY(spawnPos);
             GameObject objectToSpawn = poolingSystem.GetObject();
@@ -261,6 +257,7 @@ public class SpawningSystem : MonoBehaviour
     public void StartRespawn(float delay, int tries)
     {
         if (isRespawning) return;
+
         respawnRoutine = StartCoroutine(RespawnAtRandomAfterDelay(delay, tries));
     }
 
@@ -315,7 +312,7 @@ public class SpawningSystem : MonoBehaviour
 
         return new Vector3(
             Random.Range(bounds.min.x, bounds.max.x),
-            bounds.max.y + yOffset,
+            bounds.max.y,
             Random.Range(bounds.min.z, bounds.max.z)
         );
     }
@@ -326,11 +323,12 @@ public class SpawningSystem : MonoBehaviour
     private bool IsValidPosition(Vector3 position)
     {
         float minDistSq = minDistance * minDistance;
+
         foreach (Vector3 existingPos in spawnedMap.Values)
         {
-            if ((position - existingPos).sqrMagnitude < minDistSq)
-                return false;
+            if ((position - existingPos).sqrMagnitude < minDistSq) return false;
         }
+
         return true;
     }
 
@@ -339,20 +337,21 @@ public class SpawningSystem : MonoBehaviour
     /// </summary>
     private void ReturnObject(GameObject objectToReturn)
     {
-        if (objectToReturn == null)
-            return;
+        if (objectToReturn == null) return;
 
         if (spawnedMap.ContainsKey(objectToReturn))
+        {
             spawnedMap.Remove(objectToReturn);
+        }
 
-        poolingSystem.ReturnObject(objectToReturn);
+        poolingSystem.ReturnToPool(objectToReturn);
     }
 
     /// <summary>
     /// Force the Y-position to a fixed offset, ignoring the original Y.
     /// </summary>
-    protected Vector3 ApplyOffsetY(Vector3 newPosWithYOffset)
+    protected Vector3 ApplyOffsetY(Vector3 pos)
     {
-        return new Vector3(newPosWithYOffset.x, yOffset, newPosWithYOffset.z);
+        return new Vector3(pos.x, pos.y + yOffset, pos.z);
     }
 }

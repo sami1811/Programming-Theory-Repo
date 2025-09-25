@@ -1,5 +1,4 @@
-using Unity.VisualScripting;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class HealthSystem : MonoBehaviour, IDamageable
 {
@@ -14,8 +13,29 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
     private void OnEnable()
     {
-        RestoreOnEnable();
-        //Invoke(nameof(RegisterOnDelay), 0.5f);
+        currentHealth = maxHealth;
+
+        if (HealthBarManager.Instance != null)
+        {
+            HealthBarManager.Instance.RegisterHealthSystems(this);
+            HealthBarManager.Instance.UpdateHealthText(this, currentHealth);
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (HealthBarManager.Instance != null)
+        {
+            HealthBarManager.Instance.UnregisterHealthSystems(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (HealthBarManager.Instance != null)
+        {
+            HealthBarManager.Instance.UnregisterHealthSystems(this);
+        }
     }
 
     private void Start()
@@ -25,21 +45,19 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
     private void InitializeStart()
     {
-        if(poolManager == null)
+        if (poolManager == null)
         {
             poolManager = GetComponentInParent<PoolingSystem>();
-            RegisterOnDelay();
-            Debug.Log("Pool Manager found.");
-        }
-        else
-        {
-            Debug.LogError("Object pool manager is missing!");
+            if (poolManager != null)
+                Debug.Log("Pool Manager found.");
+            else
+                Debug.LogError("Object pool manager is missing!");
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
-        if (((1 << collision.gameObject.layer) & damageLayer) != 0)
+        if (((1 << other.gameObject.layer) & damageLayer) != 0)
         {
             TakeDamage(damagePerHit);
         }
@@ -75,18 +93,13 @@ public class HealthSystem : MonoBehaviour, IDamageable
     public void Die()
     {
         Debug.Log(gameObject.name + " is dead!");
-        HealthBarManager.Instance.UnregisterHealthSystems(this);
-        poolManager.ReturnObject(gameObject);
-    }
 
-    private void RestoreOnEnable()
-    {
+        if (HealthBarManager.Instance != null)
+        {
+            HealthBarManager.Instance.UnregisterHealthSystems(this);
+        }
+
         currentHealth = maxHealth;
-    }
-
-    private void RegisterOnDelay()
-    {
-        HealthBarManager.Instance.RegisterHealthSystems(this);
-        HealthBarManager.Instance.UpdateHealthText(this, GetCurrentHealth());
+        poolManager?.ReturnToPool(gameObject);
     }
 }

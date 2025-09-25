@@ -225,7 +225,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!4 &198227948
 Transform:
@@ -469,7 +469,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!4 &379762571
 Transform:
@@ -771,7 +771,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 0
 --- !u!4 &789508617
 Transform:
@@ -844,7 +844,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!4 &865071371
 Transform:
@@ -965,7 +965,7 @@ Transform:
   m_GameObject: {fileID: 888408780}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.12809, y: 4.54623, z: -14.54488}
+  m_LocalPosition: {x: 0, y: -1000, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -984,10 +984,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TreePoolManager
   objectPrefab: {fileID: 4985764532660486543, guid: 0e14ee6ed3d25cc4e9233c751b245789, type: 3}
-  initialPoolSize: 5
-  maxPoolSize: 12
+  initialPoolSize: 10
+  maxPoolSize: 25
   expansionBatchSize: 5
-  respawnDelay: 5
+  respawnDelay: 7
 --- !u!114 &888408783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1025,7 +1025,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!4 &936689196
 Transform:
@@ -1305,7 +1305,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!4 &1163373573
 Transform:
@@ -1551,7 +1551,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 0
 --- !u!4 &1550731779
 Transform:
@@ -1586,7 +1586,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!4 &1610740026
 Transform:
@@ -1694,7 +1694,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!4 &1621001523
 Transform:
@@ -1730,7 +1730,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!4 &1630199215
 Transform:
@@ -2182,7 +2182,7 @@ Transform:
   m_GameObject: {fileID: 1783477168}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.2714, y: -3.37021, z: -0.29194}
+  m_LocalPosition: {x: 0, y: -1000, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2203,9 +2203,9 @@ MonoBehaviour:
   objectPrefab: {fileID: 6321363761908065593, guid: 812023f72f69b1841b835f9cdcc8c4a7, type: 3}
   initialPoolSize: 5
   maxPoolSize: 20
-  expansionBatchSize: 3
+  expansionBatchSize: 4
   healthBarOffset: {x: 0, y: 4, z: 0}
-  healthBarScale: {x: 0.04, y: 0.02, z: 0.04}
+  healthBarScale: {x: 0.02, y: 0.02, z: 0.02}
   showAtDistance: 5
   playerTransform: {fileID: 4363864256248385675}
 --- !u!1 &1790054477
@@ -2455,7 +2455,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!4 &1876020996
 Transform:
@@ -2934,10 +2934,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6318271158895126242, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
       propertyPath: playerCamera
-      value: 
-      objectReference: {fileID: 1514962262}
-    - target: {fileID: 7190222842608564117, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
-      propertyPath: m_Camera
       value: 
       objectReference: {fileID: 1514962262}
     - target: {fileID: 7485101335778722231, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}

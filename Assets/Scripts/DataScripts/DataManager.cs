@@ -16,5 +16,17 @@ public class DataManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        QualitySettings.vSyncCount = 0; // disable VSync so targetFrameRate applies
+
+#if UNITY_EDITOR
+        Application.targetFrameRate = -1; // uncapped in editor
+#elif UNITY_STANDALONE
+        Application.targetFrameRate = 120; // cap for PC
+#elif UNITY_ANDROID || UNITY_IOS
+        Application.targetFrameRate = 60; // mobile default
+#else
+        Application.targetFrameRate = 60; // fallback
+#endif
     }
 }

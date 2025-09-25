@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-[DefaultExecutionOrder(-1000)]
+[DefaultExecutionOrder(-100)]
 public class PoolingSystem : MonoBehaviour, IPoolable
 {
     [Header("Pool Settings")]
@@ -36,6 +36,11 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 
     protected virtual void Awake()
     {
+        //remove these two lines later
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = -1;
+        //-----------------------------//
+
         InitializePool();
     }
 
@@ -50,20 +55,20 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     {
         if (maxPoolSize < 1)
         {
-            Debug.LogWarning("Max pool size too low. Forcing to 1.");
+            Debug.LogWarning($"{gameObject.name} Max pool size too low. Forcing to 1.");
             maxPoolSize = 1;
         }
 
         if (initialPoolSize > maxPoolSize)
         {
-            Debug.LogWarning("Initial pool size larger than max. Clamping to max.");
+            Debug.LogWarning($"Initial {gameObject.name} pool size larger than max. Clamping to max.");
             initialPoolSize = maxPoolSize;
         }
 
         // Unity Object null check - more reliable than == null
         if (ReferenceEquals(objectPrefab, null) || !objectPrefab)
         {
-            Debug.LogError("Object prefab is null. Cannot initialize pool!");
+            Debug.LogError($"{gameObject.name} prefab is null. Cannot initialize pool!");
             return;
         }
 
@@ -72,7 +77,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
             CreateNewPoolObject();
         }
 
-        Debug.Log("[PoolingSystem] Pool has been initialized successfully!");
+        Debug.Log($"[PoolingSystem] {objectPrefab.name} pool has been initialized successfully!");
     }
 
     /// <summary>
@@ -83,7 +88,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
         // Unity Object null check
         if (ReferenceEquals(objectPrefab, null) || !objectPrefab)
         {
-            Debug.LogError("Cannot instantiate: ObjectPrefab is null or destroyed.");
+            Debug.LogError($"Cannot instantiate: {gameObject.name} prefab is null or destroyed.");
             return null;
         }
 
@@ -95,9 +100,6 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 
         createdCount++;
 
-#if UNITY_EDITOR
-        Debug.Log($"[PoolingSystem] Created new object. Total created: {createdCount}, Pool size: {TotalObjectCount()}");
-#endif
         return instance;
     }
 
@@ -109,7 +111,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
         // Unity Object null check
         if (ReferenceEquals(objectPrefab, null) || !objectPrefab)
         {
-            Debug.LogError("Cannot instantiate: ObjectPrefab is null or destroyed.");
+            Debug.LogError($"Cannot instantiate: {gameObject.name} prefab is null or destroyed.");
             return null;
         }
 
@@ -168,7 +170,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 #if UNITY_EDITOR
         if (removedCount > 0)
         {
-            Debug.Log($"[PoolingSystem] Cleaned {removedCount} null/destroyed objects from pool");
+            Debug.Log($"[PoolingSystem] Cleaned {removedCount} null/destroyed {gameObject.name} object from pool");
         }
 #endif
     }
@@ -246,13 +248,13 @@ public class PoolingSystem : MonoBehaviour, IPoolable
         // Final validation before returning
         if (ReferenceEquals(instance, null) || !instance)
         {
-            Debug.LogWarning("[PoolingSystem] Pool exhausted or failed to create object.");
+            Debug.LogWarning($"[PoolingSystem] {gameObject.name} pool exhausted or failed to create object.");
             return null;
         }
 
         if (activeSet.Contains(instance))
         {
-            Debug.LogError($"[PoolingSystem] Pool returned already active object: {instance.name}");
+            Debug.LogError($"[PoolingSystem] {gameObject.name} pool returned already active object: {instance.name}");
             return null;
         }
 
@@ -289,7 +291,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
             }
 
 #if UNITY_EDITOR
-            Debug.Log($"[PoolingSystem] Batch expanded by {toCreate}. Total pool size: {TotalObjectCount()}");
+            Debug.Log($"[PoolingSystem] {gameObject.name} pool batch expanded by {toCreate}. Total pool size: {TotalObjectCount()}");
 #endif
 
             return firstObject ?? currentInstance;
@@ -301,12 +303,12 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     /// <summary>
     /// Return an object back to the pool with proper Unity null validation.
     /// </summary>
-    public virtual void ReturnObject(GameObject objectToReturn)
+    public virtual void ReturnToPool(GameObject objectToReturn)
     {
         // Unity Object null check
         if (ReferenceEquals(objectToReturn, null) || !objectToReturn)
         {
-            Debug.LogWarning("[PoolingSystem] Tried to return null or destroyed object.");
+            Debug.LogWarning($"[PoolingSystem] {gameObject.name} tried to return null or destroyed object.");
             return;
         }
 
@@ -387,17 +389,9 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 #if UNITY_EDITOR
         if (removedCount > 0)
         {
-            Debug.Log($"[PoolingSystem] Cleaned {removedCount} destroyed objects from active list");
+            Debug.Log($"[PoolingSystem] {gameObject.name} cleaned {removedCount} destroyed objects from active list");
         }
 #endif
-    }
-
-    /// <summary>
-    /// Utility method to check if a Unity Object is truly valid
-    /// </summary>
-    private bool IsValidUnityObject(Object obj)
-    {
-        return !ReferenceEquals(obj, null) && obj;
     }
 
     /// <summary>
@@ -412,13 +406,13 @@ public class PoolingSystem : MonoBehaviour, IPoolable
             var obj = CreateNewPoolObject();
             if (ReferenceEquals(obj, null) || !obj)
             {
-                Debug.LogWarning("[PoolingSystem] Failed to create object during pool warming");
+                Debug.LogWarning($"[PoolingSystem] Failed to create {gameObject.name} object during pool warming");
                 break;
             }
         }
 
 #if UNITY_EDITOR
-        Debug.Log($"[PoolingSystem] Pool warmed to {TotalObjectCount()} objects");
+        Debug.Log($"[PoolingSystem] {gameObject.name} object pool warmed to {TotalObjectCount()} objects");
 #endif
     }
 

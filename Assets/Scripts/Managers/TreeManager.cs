@@ -7,10 +7,9 @@ public class TreeManager : PoolingSystem
     private SpawningSystem spawningSystem;
     private int respawnTries = 5;
 
-    protected override void Awake()
+    private void Start()
     {
-        base.Awake();
-        InitializeAwake();
+        InitializeStart();
     }
 
     private void Update()
@@ -18,16 +17,20 @@ public class TreeManager : PoolingSystem
         RespaenTree();
     }
 
-    private void InitializeAwake()
+    private void InitializeStart()
     {
         if(spawningSystem == null)
         {
             spawningSystem = GetComponent<SpawningSystem>();
-            Debug.Log("Spawn manager found.");
-        }
-        else
-        {
-            Debug.LogError("Spawn manager missing!");
+
+            if (spawningSystem != null )
+            {
+                Debug.Log("[Tree Manager] Spawn manager found.");
+            }
+            else
+            {
+                Debug.LogError($"Spawn manager is missing!");
+            }
         }
     }
 
