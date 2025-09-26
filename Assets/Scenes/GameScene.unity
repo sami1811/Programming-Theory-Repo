@@ -984,9 +984,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TreePoolManager
   objectPrefab: {fileID: 4985764532660486543, guid: 0e14ee6ed3d25cc4e9233c751b245789, type: 3}
-  initialPoolSize: 10
-  maxPoolSize: 25
+  initialPoolSize: 20
+  maxPoolSize: 30
   expansionBatchSize: 5
+  enableAutoShrink: 1
+  minPoolSize: 5
+  idelTimeOut: 5
+  shrinkCheckInterval: 7
   respawnDelay: 7
 --- !u!114 &888408783
 MonoBehaviour:
@@ -2202,8 +2206,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HealthCanvasManager
   objectPrefab: {fileID: 6321363761908065593, guid: 812023f72f69b1841b835f9cdcc8c4a7, type: 3}
   initialPoolSize: 5
-  maxPoolSize: 20
-  expansionBatchSize: 4
+  maxPoolSize: 30
+  expansionBatchSize: 5
+  enableAutoShrink: 1
+  minPoolSize: 5
+  idelTimeOut: 60
+  shrinkCheckInterval: 65
   healthBarOffset: {x: 0, y: 4, z: 0}
   healthBarScale: {x: 0.02, y: 0.02, z: 0.02}
   showAtDistance: 5

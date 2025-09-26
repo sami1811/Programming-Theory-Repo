@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [DefaultExecutionOrder(-100)]
@@ -9,6 +11,13 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     [SerializeField] protected int initialPoolSize = 5;
     [SerializeField] protected int maxPoolSize = 20;
     [SerializeField] protected int expansionBatchSize = 5;
+
+    [Header("Pool Shrink Settings")]
+    [SerializeField] protected bool enableAutoShrink;
+    [SerializeField] protected int minPoolSize = 7;
+    [SerializeField] protected float idelTimeOut = 60f;
+    [SerializeField] protected float shrinkCheckInterval = 30f;
+
 
     // --- Collections ---
     protected Queue<GameObject> availableObjects = new Queue<GameObject>();
@@ -29,14 +38,21 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     // --- Collection Reuse for Cleaning ---
     private Queue<GameObject> reusableCleanQueue = new Queue<GameObject>();
     private HashSet<GameObject> reusableCleanSet = new HashSet<GameObject>();
+    private Dictionary<GameObject, float> idleTimes = new Dictionary<GameObject, float>();
 
     // --- Periodic Active Cleaning ---
     private float lastActiveCleanTime;
     private const float ACTIVE_CLEAN_INTERVAL = 30f; // Clean every 30 seconds
+    private bool isAutoShrinkRunning = false;
+
+    public int InitialPoolSize => initialPoolSize;
+    public int MaxPoolSize => maxPoolSize;
+    public GameObject ObjectPrefab => objectPrefab;
 
     protected virtual void Awake()
     {
         //remove these two lines later
+        //-----------------------------//
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = -1;
         //-----------------------------//
@@ -44,9 +60,10 @@ public class PoolingSystem : MonoBehaviour, IPoolable
         InitializePool();
     }
 
-    public int InitialPoolSize => initialPoolSize;
-    public int MaxPoolSize => maxPoolSize;
-    public GameObject ObjectPrefab => objectPrefab;
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+    }
 
     /// <summary>
     /// Initialize the pool and pre-create objects.
@@ -77,7 +94,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
             CreateNewPoolObject();
         }
 
-        Debug.Log($"[PoolingSystem] {objectPrefab.name} pool has been initialized successfully!");
+        Debug.Log($"[PoolingSystem] {gameObject.name} pool has been initialized successfully!");
     }
 
     /// <summary>
@@ -97,6 +114,11 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 
         availableObjects.Enqueue(instance);
         availableSet.Add(instance);
+
+        if (enableAutoShrink)
+        {
+            idleTimes[instance] = Time.time;
+        }
 
         createdCount++;
 
@@ -158,6 +180,12 @@ public class PoolingSystem : MonoBehaviour, IPoolable
                     {
                         reusableCleanQueue.Enqueue(replacement);
                         reusableCleanSet.Add(replacement);
+
+                        if (enableAutoShrink)
+                        {
+                            idleTimes[replacement] = Time.time;
+                        }
+
                     }
                 }
             }
@@ -173,6 +201,76 @@ public class PoolingSystem : MonoBehaviour, IPoolable
             Debug.Log($"[PoolingSystem] Cleaned {removedCount} null/destroyed {gameObject.name} object from pool");
         }
 #endif
+    }
+
+    protected void StartAutoShrink()
+    {
+        if(enableAutoShrink && !isAutoShrinkRunning)
+        {
+            isAutoShrinkRunning = true;
+            StartCoroutine(AutoShrinkCoroutine());
+        }
+    }
+
+    private IEnumerator AutoShrinkCoroutine()
+    {
+        yield return new WaitForSeconds(shrinkCheckInterval);
+
+        if(availableObjects.Count > minPoolSize)
+        {
+            int destroyed = 0;
+            List<GameObject> toDestroy = new List<GameObject>();
+
+            foreach (var pair in idleTimes)
+            {
+                if(Time.time - pair.Value > idelTimeOut && availableSet.Contains(pair.Key))
+                {
+                    toDestroy.Add(pair.Key);
+                }
+            }
+
+            int maxToDestroy = availableObjects.Count - minPoolSize;
+
+            if(toDestroy.Count > maxToDestroy)
+            {
+                toDestroy = toDestroy.GetRange(0, maxToDestroy);
+            }
+
+            foreach (var obj in toDestroy)
+            {
+                if(!ReferenceEquals(obj, null) && obj && availableSet.Contains(obj))
+                {
+                    availableSet.Remove(obj);
+                    idleTimes.Remove(obj);
+                    Object.Destroy(obj);
+                    destroyedCount++;
+                    destroyed++;
+                }
+            }
+
+            // Rebuild availableObjects queue once
+            if (destroyed > 0)
+            {
+                availableObjects = new Queue<GameObject>(availableObjects.Where(o => availableSet.Contains(o)));
+            }
+
+#if UNITY_EDITOR
+            if (destroyed > 0)
+            {
+                Debug.Log($"[PoolingSystem] Auto-shrunk {gameObject.name} pool by {destroyed} objects due to idle timeout. Total remaining: {TotalObjectCount()}");
+            }
+#endif
+        }
+
+        if (enableAutoShrink && !isAutoShrinkRunning)
+        {
+            isAutoShrinkRunning = true;
+            yield return StartCoroutine(AutoShrinkCoroutine());
+        }
+        else
+        {
+            isAutoShrinkRunning = false;
+        }
     }
 
     /// <summary>
@@ -211,6 +309,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
                 if (!ReferenceEquals(instance, null))
                 {
                     availableSet.Remove(instance);
+                    idleTimes.Remove(instance);
                 }
 
                 destroyedCount++;
@@ -222,6 +321,11 @@ public class PoolingSystem : MonoBehaviour, IPoolable
                     instance = CreateNewObjectDirect();
                     if (!ReferenceEquals(instance, null) && instance)
                     {
+                        if (enableAutoShrink)
+                        {
+                            idleTimes[instance] = Time.time;
+                        }
+
                         consecutiveNulls = 0; // Reset since we got a valid object
                         break;
                     }
@@ -233,6 +337,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 
             consecutiveNulls = 0; // Reset counter on valid object
             availableSet.Remove(instance);
+            idleTimes.Remove(instance);
 
             if (!activeSet.Contains(instance))
             {
@@ -286,12 +391,17 @@ public class PoolingSystem : MonoBehaviour, IPoolable
                     {
                         availableObjects.Enqueue(obj);
                         availableSet.Add(obj);
+
+                        if (enableAutoShrink)
+                        {
+                            idleTimes[obj] = Time.time;
+                        }
                     }
                 }
             }
 
 #if UNITY_EDITOR
-            Debug.Log($"[PoolingSystem] {gameObject.name} pool batch expanded by {toCreate}. Total pool size: {TotalObjectCount()}");
+            Debug.Log($"[PoolingSystem] {gameObject.name} pool batch expanded by {toCreate}. Total pool size: {TotalObjectCount() + (firstObject != null ? 1 : 0)}");
 #endif
 
             return firstObject ?? currentInstance;
@@ -347,6 +457,11 @@ public class PoolingSystem : MonoBehaviour, IPoolable
             availableObjects.Enqueue(objectToReturn);
             availableSet.Add(objectToReturn);
 
+            if (enableAutoShrink)
+            {
+                idleTimes[objectToReturn] = Time.time;
+            }
+
             recycledCount++;
         }
     }
@@ -360,6 +475,11 @@ public class PoolingSystem : MonoBehaviour, IPoolable
         if (!ReferenceEquals(objectToRetrieve, null) && objectToRetrieve)
         {
             objectToRetrieve.SetActive(true);
+        }
+
+        if (enableAutoShrink)
+        {
+            idleTimes.Remove(objectToRetrieve);
         }
     }
 
@@ -380,6 +500,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
                 if (!ReferenceEquals(obj, null))
                 {
                     activeSet.Remove(obj);
+                    idleTimes.Remove(obj);
                 }
                 destroyedCount++;
                 removedCount++;

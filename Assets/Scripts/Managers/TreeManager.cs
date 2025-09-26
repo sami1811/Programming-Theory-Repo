@@ -4,7 +4,6 @@ public class TreeManager : PoolingSystem
 {
     [SerializeField] private float respawnDelay = 5f;
 
-    private SpawningSystem spawningSystem;
     private int respawnTries = 5;
 
     private void Start()
@@ -14,31 +13,31 @@ public class TreeManager : PoolingSystem
 
     private void Update()
     {
-        RespaenTree();
+        RespawnTree();
+        StartAutoShrink();
+    }
+
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
     }
 
     private void InitializeStart()
     {
-        if(spawningSystem == null)
+        if (SpawningSystem.instance == null)
         {
-            spawningSystem = GetComponent<SpawningSystem>();
-
-            if (spawningSystem != null )
-            {
-                Debug.Log("[Tree Manager] Spawn manager found.");
-            }
-            else
-            {
-                Debug.LogError($"Spawn manager is missing!");
-            }
+            Debug.LogError($"[Tree Manager] Spawn manager is missing!");
+            return;
         }
+
+        SpawningSystem.instance.SpawnInitialObject();
     }
 
-    private void RespaenTree()
+    private void RespawnTree()
     {
-        if (!ReferenceEquals(spawningSystem, null) && spawningSystem)
+        if (SpawningSystem.instance != null)
         {
-            spawningSystem.StartRespawn(respawnDelay, respawnTries);
+            SpawningSystem.instance.StartRespawn(respawnDelay, respawnTries);
         }
     }
 }

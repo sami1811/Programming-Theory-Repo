@@ -32,6 +32,8 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
     private void OnDestroy()
     {
+        StopAllCoroutines();
+
         if (HealthBarManager.Instance != null)
         {
             HealthBarManager.Instance.UnregisterHealthSystems(this);

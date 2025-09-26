@@ -48,6 +48,8 @@ public class HealthBarManager : PoolingSystem
 
     private void Update()
     {
+        StartAutoShrink();
+
         if(playerTransform == null) return;
 
         if (Time.time >= nextUpdateTime)
@@ -55,9 +57,11 @@ public class HealthBarManager : PoolingSystem
             UpdateCanvasStates();
             nextUpdateTime += updateInterval;
         }
+    }
 
-        //UpdateCanvasVisibility();
-        //UpdateActiveCanvasPositions();
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
     }
 
     private void UpdateCanvasStates()
@@ -116,60 +120,6 @@ public class HealthBarManager : PoolingSystem
         }
     }
 
-    /*private void UpdateCanvasVisibility()
-    {
-        List<HealthSystem> hsToProcess = new List<HealthSystem>(registeredHealthSystems);
-
-        foreach(HealthSystem hs in hsToProcess)
-        {
-            if(hs == null)
-            {
-                registeredHealthSystems.Remove(hs);
-                continue;
-            }
-
-            bool shouldShowCanvas = ShouldShowCanvas(hs);
-            bool hasActiveCanvas = activeCanvases.ContainsKey(hs);
-
-            if (shouldShowCanvas && !hasActiveCanvas)
-            {
-                AssignCanvas(hs);
-            }
-            else if (!shouldShowCanvas && hasActiveCanvas)
-            {
-                ReturnCanvas(hs);
-            }
-        }
-    }
-
-    private void UpdateActiveCanvasPositions()
-    {
-        foreach (var hsc in activeCanvases)
-        {
-            HealthSystem healthSystem = hsc.Key;
-            GameObject canvasObj = hsc.Value;
-
-            if (healthSystem != null && canvasObj != null)
-            {
-                canvasObj.transform.position = healthSystem.transform.position + healthBarOffset;
-
-                if (mainCamera != null)
-                {
-                    Vector3 lookDir = canvasObj.transform.position - mainCamera.transform.position;
-                    canvasObj.transform.rotation = Quaternion.LookRotation(lookDir);
-                }
-            }
-        }
-    }*/
-
-    private bool ShouldShowCanvas(HealthSystem hs)
-    {
-            float distanceSqr = (playerTransform.position - hs.transform.position).sqrMagnitude;
-            float showDistanceSqr = showAtDistance * showAtDistance;
-
-            return distanceSqr <= showDistanceSqr;
-    }
-
     private void AssignCanvas(HealthSystem hs)
     {
         GameObject canvasObj = GetObject();
@@ -212,8 +162,6 @@ public class HealthBarManager : PoolingSystem
         {
             ReturnCanvas(hs);
         }
-
-        //healthText.Remove(hs);
     }
 
     private void ReturnCanvas(HealthSystem hs)

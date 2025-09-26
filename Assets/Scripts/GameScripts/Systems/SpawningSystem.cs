@@ -5,6 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(PoolingSystem))]
 public class SpawningSystem : MonoBehaviour
 {
+    public static SpawningSystem instance {  get; private set; }
+
     [Header("Spawn Area Settings")]
     [Tooltip("List of game objects that define spawnable areas. Each must have a Renderer (e.g., plane).")]
     public List<GameObject> spawnAreas = new List<GameObject>();
@@ -45,6 +47,11 @@ public class SpawningSystem : MonoBehaviour
         InitializeStart();
     }
 
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+    }
+
     /// <summary>
     /// Spawns the initial set of pooled objects at random valid positions.
     /// </summary>
@@ -58,6 +65,14 @@ public class SpawningSystem : MonoBehaviour
     /// </summary>
     private void InitializeAwake()
     {
+        if(instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
+
         poolingSystem = GetComponent<PoolingSystem>();
 
         if (poolingSystem == null)
