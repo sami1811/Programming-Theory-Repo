@@ -5,22 +5,25 @@ using UnityEngine;
 [RequireComponent(typeof(PoolingSystem))]
 public class SpawningSystem : MonoBehaviour
 {
-    public static SpawningSystem instance {  get; private set; }
-
     [Header("Spawn Area Settings")]
     [Tooltip("List of game objects that define spawnable areas. Each must have a Renderer (e.g., plane).")]
     public List<GameObject> spawnAreas = new List<GameObject>();
 
     [Header("Spawner Settings")]
     [Tooltip("Minimum allowed distance between spawned objects.")]
-    public float minDistance = 5f;
+    public float minDistance;
 
     [Tooltip("Vertical offset applied to all spawned objects (to place them above the surface).")]
-    public float yOffset = 0.99f;
+    public float yOffset;
 
     [Header("Spawn Loop Settings")]
-    [Tooltip("Maximum number of attempts to find a valid spawn position per object.")]
-    public int maxSpawnAttempts = 2;
+    [Tooltip("Maximum number of attempts to find a valid spawn position per initial object.")]
+    public int maxSpawnAttempts;
+
+    [Header("Respawn Settings")]
+    [SerializeField] private float nextRespawnTime;
+    [SerializeField] private int respawnTries;
+    [SerializeField] private float respawnDelay;
 
     // Reference to the pooling system that provides/recycles objects
     private PoolingSystem poolingSystem;
@@ -28,13 +31,17 @@ public class SpawningSystem : MonoBehaviour
     // Internal dictionary mapping active objects to their spawn positions
     private readonly Dictionary<GameObject, Vector3> spawnedMap = new Dictionary<GameObject, Vector3>();
 
+    // Periodic cleanup settings
+    private static readonly List<GameObject> keysToRemove = new List<GameObject>();
+    private float lastCleanupTime;
+    private const float CLEANUP_INTERVAL = 30f;
+
     /// <summary>
     /// Read-only access to the current spawned object-position map.
     /// </summary>
     public IReadOnlyDictionary<GameObject, Vector3> SpawnedMap => spawnedMap;
 
     // Respawn coroutine state
-    private Coroutine respawnRoutine;
     private bool isRespawning;
 
     private void Awake()
@@ -45,6 +52,41 @@ public class SpawningSystem : MonoBehaviour
     private void Start()
     {
         InitializeStart();
+    }
+
+    private void Update()
+    {
+        // Periodic cleanup of spawnedMap
+        if (Time.time - lastCleanupTime > CLEANUP_INTERVAL)
+        {
+            CleanSpawnedMap();
+            lastCleanupTime = Time.time;
+        }
+    }
+
+    /// <summary>
+    /// Cleans up null or destroyed GameObjects from spawnedMap.
+    /// </summary>
+    private void CleanSpawnedMap()
+    {
+        keysToRemove.Clear();
+        foreach (var pair in spawnedMap)
+        {
+            if (ReferenceEquals(pair.Key, null) || !pair.Key)
+            {
+                keysToRemove.Add(pair.Key);
+            }
+        }
+        foreach (var key in keysToRemove)
+        {
+            spawnedMap.Remove(key);
+        }
+/*#if UNITY_EDITOR
+        if (keysToRemove.Count > 0)
+        {
+            Debug.Log($"[SpawningSystem] Cleaned {keysToRemove.Count} null/destroyed objects from spawnedMap");
+        }
+#endif*/
     }
 
     private void OnDestroy()
@@ -65,14 +107,6 @@ public class SpawningSystem : MonoBehaviour
     /// </summary>
     private void InitializeAwake()
     {
-        if(instance != null && instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        instance = this;
-
         poolingSystem = GetComponent<PoolingSystem>();
 
         if (poolingSystem == null)
@@ -106,14 +140,11 @@ public class SpawningSystem : MonoBehaviour
             return;
         }
 
-        Debug.Log($"Successfully spawned {successfulSpawns} out of {poolingSystem.InitialPoolSize} {poolingSystem.ObjectPrefab.name}(s)");
+        Debug.Log($"Successfully spawned initial objects");
 
         if (successfulSpawns < poolingSystem.InitialPoolSize)
         {
-            Debug.LogWarning(
-                $"Could only spawn {successfulSpawns} out of {poolingSystem.InitialPoolSize} " +
-                $"due to space constraints or max attempts reached."
-            );
+            Debug.LogWarning($"Couldn't spawn all initial pool objects due to space constraints or max attempts reached.");
         }
     }
 
@@ -155,7 +186,7 @@ public class SpawningSystem : MonoBehaviour
                 // Prevent double assignment
                 if (spawnedMap.ContainsKey(objectToSpawn))
                 {
-                    Debug.LogWarning($"{objectToSpawn.name} is being respawned without being returned. Retry spawning!");
+                    Debug.LogWarning($"Object is being respawned without being returned. Retry spawning!");
                     ReturnObject(objectToSpawn);
                     return false;
                 }
@@ -184,7 +215,7 @@ public class SpawningSystem : MonoBehaviour
             {
                 if (spawnedMap.ContainsKey(objectToSpawn))
                 {
-                    Debug.LogWarning($"{objectToSpawn.name} is being respawned without being returned. Retry spawning!");
+                    Debug.LogWarning($"Object is being respawned without being returned. Retry spawning!");
                     ReturnObject(objectToSpawn);
                     return;
                 }
@@ -195,7 +226,7 @@ public class SpawningSystem : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"Position {position} is too close to existing objects.");
+            Debug.LogWarning($"Position is too close to existing objects.");
         }
     }
 
@@ -216,15 +247,15 @@ public class SpawningSystem : MonoBehaviour
                 { // Successfully spawned → break out
                     break;
                 }
-                else
+                /*else
                 {
                     Debug.Log("Respawn failed, retrying after delay...");
-                }
+                }*/
             }
-            else
+            /*else
             {
                 Debug.Log("Pool full, waiting before retry...");
-            }
+            }*/
         }
 
         isRespawning = false;
@@ -246,13 +277,13 @@ public class SpawningSystem : MonoBehaviour
 
             if (objectToSpawn == null)
             {
-                Debug.LogWarning($"Pool exhausted on delayed spawn attempt {attempt + 1}");
+                Debug.LogWarning($"Pool exhausted on delayed spawn attempt.");
                 continue;
             }
 
             if (spawnedMap.ContainsKey(objectToSpawn))
             {
-                Debug.LogWarning($"Pool returned active object. Retry {attempt + 1}/{maxRetries}");
+                Debug.LogWarning($"Pool returned active object. Retry!");
                 ReturnObject(objectToSpawn);
                 continue;
             }
@@ -269,11 +300,26 @@ public class SpawningSystem : MonoBehaviour
     /// <summary>
     /// Starts a respawn coroutine that retries until an object is spawned.
     /// </summary>
-    public void StartRespawn(float delay, int tries)
+    private void StartRespawn(float delay, int tries)
     {
         if (isRespawning) return;
+        
+        isRespawning = true;
+        StartCoroutine(RespawnAtRandomAfterDelay(delay, tries));
+    }
 
-        respawnRoutine = StartCoroutine(RespawnAtRandomAfterDelay(delay, tries));
+    public void RespawnObject()
+    {
+        if (Time.time >= nextRespawnTime && ShouldRespawn())
+        {
+            StartRespawn(respawnDelay, respawnTries);
+            nextRespawnTime = Time.time + respawnDelay;
+        }
+    }
+
+    private bool ShouldRespawn()
+    {
+        return poolingSystem != null && poolingSystem.ActiveObjectCount() < poolingSystem.InitialPoolSize;
     }
 
     /// <summary>
@@ -292,7 +338,7 @@ public class SpawningSystem : MonoBehaviour
             {
                 if (spawnedMap.ContainsKey(objectToSpawn))
                 {
-                    Debug.LogWarning($"{objectToSpawn.name} is being respawned without being returned. Retry spawning!");
+                    Debug.LogWarning($"Object is being respawned without being returned. Retry spawning!");
                     ReturnObject(objectToSpawn);
                     return;
                 }
@@ -319,7 +365,7 @@ public class SpawningSystem : MonoBehaviour
 
         if (planeRenderer == null)
         {
-            Debug.LogError($"No renderer found on spawn area: {randomArea.name}");
+            Debug.LogError($"No renderer found on spawn area!");
             return Vector3.zero;
         }
 
@@ -360,6 +406,14 @@ public class SpawningSystem : MonoBehaviour
         }
 
         poolingSystem.ReturnToPool(objectToReturn);
+    }
+
+    public void OnObjectReturned(GameObject obj)
+    {
+        if (spawnedMap.ContainsKey(obj))
+        {
+            spawnedMap.Remove(obj);
+        }
     }
 
     /// <summary>

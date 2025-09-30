@@ -48,7 +48,7 @@ GameObject:
   - component: {fileID: 8848117716995978009}
   m_Layer: 3
   m_Name: Player
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -167,6 +167,9 @@ MonoBehaviour:
   zBound: 20
   playerMarkerObj: {fileID: 6818096446185233346}
   animationSpeed: 2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
 --- !u!54 &8848117716995978009
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -1,7 +1,10 @@
 using UnityEngine;
 
-public class TreeManager : PoolingSystem
+public class EnemyManager : PoolingSystem
 {
+    [Header("Enemy Target Settings")]
+    public GameObject targetObject;
+
     private SpawningSystem mySpawner;
 
     private void Start()

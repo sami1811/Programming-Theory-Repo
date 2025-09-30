@@ -22,6 +22,8 @@ public class HealthBarManager : PoolingSystem
     private float updateInterval = 0.1f;
     private float nextUpdateTime = 0f;
 
+    private SpawningSystem spawner;
+
     protected override void Awake()
     {
         InitializeAwake();
@@ -130,7 +132,7 @@ public class HealthBarManager : PoolingSystem
             return;
         }
 
-        canvasObj.transform.position = hs.transform.position + healthBarOffset;
+        UpdateCanvasPosition(canvasObj, hs.transform.position, healthBarOffset);
 
         TMP_Text txt = canvasObj.GetComponentInChildren<TMP_Text>();
 
@@ -143,12 +145,20 @@ public class HealthBarManager : PoolingSystem
         activeCanvases[hs] = canvasObj;
     }
 
+    public void UpdateCanvasPosition(GameObject gameObject, Vector3 setPosition, Vector3 yOffset)
+    {
+        if(gameObject != null)
+        {
+            gameObject.transform.position = setPosition + yOffset;
+        }
+    }
+
     public void RegisterHealthSystems(HealthSystem hs)
     {
         if (hs != null && !registeredHealthSystems.Contains(hs))
         {
             registeredHealthSystems.Add(hs);
-            Debug.Log($"[HealthBarManager] Registered health system {hs.gameObject.name}");
+            //Debug.Log($"[HealthBarManager] Registered health system {hs.gameObject.name}");
         }
     }
 
