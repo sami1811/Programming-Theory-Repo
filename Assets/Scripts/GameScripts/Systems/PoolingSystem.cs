@@ -7,41 +7,41 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 {
     [Header("Pool Settings")]
     [SerializeField] protected GameObject objectPrefab;
-    [SerializeField] protected int initialPoolSize = 5;
-    [SerializeField] protected int maxPoolSize = 20;
-    [SerializeField] protected int expansionBatchSize = 5;
+    [SerializeField] protected int initialPoolSize;
+    [SerializeField] protected int maxPoolSize;
+    [SerializeField] protected int expansionBatchSize;
 
     [Header("Pool Shrink Settings")]
     [SerializeField] protected bool enableAutoShrink;
-    [SerializeField] protected int minPoolSize = 7;
-    [SerializeField] protected float idleTimeOut = 60f;
-    [SerializeField] protected float shrinkCheckInterval = 30f;
+    [SerializeField] protected int minPoolSize;
+    [SerializeField] protected float idleTimeOut;
+    [SerializeField] protected float shrinkCheckInterval;
 
     // --- Collections ---
-    protected Queue<GameObject> availableObjects = new Queue<GameObject>();
-    protected HashSet<GameObject> availableSet = new HashSet<GameObject>();
-    protected List<GameObject> activeObjects = new List<GameObject>();
-    protected HashSet<GameObject> activeSet = new HashSet<GameObject>();
+    private Queue<GameObject> _availableObjects = new Queue<GameObject>();
+    private HashSet<GameObject> _availableSet = new HashSet<GameObject>();
+    private readonly List<GameObject> _activeObjects = new List<GameObject>();
+    private readonly HashSet<GameObject> _activeSet = new HashSet<GameObject>();
 
     // --- Memory Tracking ---
-    private int createdCount = 0;
-    private int recycledCount = 0;
-    private int destroyedCount = 0;
+    private int _createdCount;
+    private int _recycledCount;
+    private int _destroyedCount;
 
     // --- Lazy Cleaning ---
-    private int consecutiveNulls = 0;
-    private const int IMMEDIATE_CLEAN_THRESHOLD = 3;
+    private int _consecutiveNulls;
+    private const int ImmediateCleanThreshold = 5;
 
     // --- Collection Reuse for Cleaning ---
-    private Queue<GameObject> reusableCleanQueue = new Queue<GameObject>();
-    private HashSet<GameObject> reusableCleanSet = new HashSet<GameObject>();
-    private Dictionary<GameObject, float> idleTimes = new Dictionary<GameObject, float>();
+    private Queue<GameObject> _reusableCleanQueue = new Queue<GameObject>();
+    private HashSet<GameObject> _reusableCleanSet = new HashSet<GameObject>();
+    private readonly Dictionary<GameObject, float> _idleTimes = new Dictionary<GameObject, float>();
 
     // --- Periodic Active Cleaning ---
-    private List<GameObject> toDestroy = new List<GameObject>();
-    private float lastActiveCleanTime;
-    private const float ACTIVE_CLEAN_INTERVAL = 30f;
-    private bool isAutoShrinkRunning = false;
+    private readonly List<GameObject> _toDestroy = new List<GameObject>();
+    private float _lastActiveCleanTime;
+    private const float ActiveCleanInterval = 30f;
+    private bool _isAutoShrinkRunning;
 
     public int InitialPoolSize => initialPoolSize;
     public int MaxPoolSize => maxPoolSize;
@@ -59,23 +59,31 @@ public class PoolingSystem : MonoBehaviour, IPoolable
         StopAllCoroutines();
     }
 
-    protected void InitializePoolOnAwake()
+    private void InitializePoolOnAwake()
     {
         if (maxPoolSize < 1)
         {
+            
+#if UNITY_EDITOR
             Debug.LogWarning("Max pool size too low. Forcing to 1.");
+#endif
+            
             maxPoolSize = 1;
         }
 
         if (initialPoolSize > maxPoolSize)
         {
+#if UNITY_EDITOR
             Debug.LogWarning("Initial pool size is larger than max. Clamping to max.");
+#endif
             initialPoolSize = maxPoolSize;
         }
 
         if (ReferenceEquals(objectPrefab, null) || !objectPrefab)
         {
+#if UNITY_EDITOR
             Debug.LogError("Prefab is null. Cannot initialize pool!");
+#endif
             return;
         }
 
@@ -83,30 +91,33 @@ public class PoolingSystem : MonoBehaviour, IPoolable
         {
             CreateNewPoolObject();
         }
-
+#if UNITY_EDITOR
         Debug.Log("[PoolingSystem] Pool initialized successfully!");
+#endif
     }
 
     public GameObject CreateNewPoolObject()
     {
         if (ReferenceEquals(objectPrefab, null) || !objectPrefab)
         {
+#if UNITY_EDITOR
             Debug.LogError("Cannot instantiate, prefab is null or destroyed!");
+#endif
             return null;
         }
 
         GameObject instance = Instantiate(objectPrefab, transform);
         instance.SetActive(false);
 
-        availableObjects.Enqueue(instance);
-        availableSet.Add(instance);
+        _availableObjects.Enqueue(instance);
+        _availableSet.Add(instance);
 
         if (enableAutoShrink)
         {
-            idleTimes[instance] = Time.time;
+            _idleTimes[instance] = Time.time;
         }
 
-        createdCount++;
+        _createdCount++;
         return instance;
     }
 
@@ -114,54 +125,56 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     {
         if (ReferenceEquals(objectPrefab, null) || !objectPrefab)
         {
+#if UNITY_EDITOR
             Debug.LogError("Cannot instantiate, prefab is null or destroyed!");
+#endif
             return null;
         }
 
         GameObject instance = Instantiate(objectPrefab, transform);
         instance.SetActive(false);
-        createdCount++;
+        _createdCount++;
         return instance;
     }
 
-    protected void CleanAvailableQueue()
+    private void CleanAvailableQueue()
     {
-        if (availableObjects.Count == 0) return;
+        if (_availableObjects.Count == 0) return;
 
-        reusableCleanQueue.Clear();
-        reusableCleanSet.Clear();
+        _reusableCleanQueue.Clear();
+        _reusableCleanSet.Clear();
         int removedCount = 0;
 
-        while (availableObjects.Count > 0)
+        while (_availableObjects.Count > 0)
         {
-            var go = availableObjects.Dequeue();
+            var go = _availableObjects.Dequeue();
             if (!ReferenceEquals(go, null) && go)
             {
-                reusableCleanQueue.Enqueue(go);
-                reusableCleanSet.Add(go);
+                _reusableCleanQueue.Enqueue(go);
+                _reusableCleanSet.Add(go);
             }
             else
             {
-                destroyedCount++;
+                _destroyedCount++;
                 removedCount++;
                 if (TotalObjectCount() - removedCount < maxPoolSize)
                 {
                     var replacement = CreateNewObjectDirect();
                     if (!ReferenceEquals(replacement, null) && replacement)
                     {
-                        reusableCleanQueue.Enqueue(replacement);
-                        reusableCleanSet.Add(replacement);
+                        _reusableCleanQueue.Enqueue(replacement);
+                        _reusableCleanSet.Add(replacement);
                         if (enableAutoShrink)
                         {
-                            idleTimes[replacement] = Time.time;
+                            _idleTimes[replacement] = Time.time;
                         }
                     }
                 }
             }
         }
 
-        (availableObjects, reusableCleanQueue) = (reusableCleanQueue, availableObjects);
-        (availableSet, reusableCleanSet) = (reusableCleanSet, availableSet);
+        (_availableObjects, _reusableCleanQueue) = (_reusableCleanQueue, _availableObjects);
+        (_availableSet, _reusableCleanSet) = (_reusableCleanSet, _availableSet);
 
 #if UNITY_EDITOR
         if (removedCount > 0)
@@ -173,9 +186,9 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 
     protected void StartAutoShrink()
     {
-        if (enableAutoShrink && !isAutoShrinkRunning)
+        if (enableAutoShrink && !_isAutoShrinkRunning)
         {
-            isAutoShrinkRunning = true;
+            _isAutoShrinkRunning = true;
             StartCoroutine(AutoShrinkCoroutine());
         }
     }
@@ -184,33 +197,33 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     {
         yield return new WaitForSeconds(shrinkCheckInterval);
 
-        if (availableObjects.Count > minPoolSize)
+        if (_availableObjects.Count > minPoolSize)
         {
-            toDestroy.Clear();
+            _toDestroy.Clear();
             int destroyed = 0;
 
-            foreach (var pair in idleTimes)
+            foreach (var pair in _idleTimes)
             {
-                if (Time.time - pair.Value > idleTimeOut && availableSet.Contains(pair.Key))
+                if (Time.time - pair.Value > idleTimeOut && _availableSet.Contains(pair.Key))
                 {
-                    toDestroy.Add(pair.Key);
+                    _toDestroy.Add(pair.Key);
                 }
             }
 
-            int maxToDestroy = availableObjects.Count - minPoolSize;
-            if (toDestroy.Count > maxToDestroy)
+            int maxToDestroy = _availableObjects.Count - minPoolSize;
+            if (_toDestroy.Count > maxToDestroy)
             {
-                toDestroy.RemoveRange(maxToDestroy, toDestroy.Count - maxToDestroy);
+                _toDestroy.RemoveRange(maxToDestroy, _toDestroy.Count - maxToDestroy);
             }
 
-            foreach (var obj in toDestroy)
+            foreach (var obj in _toDestroy)
             {
-                if (!ReferenceEquals(obj, null) && obj && availableSet.Contains(obj))
+                if (!ReferenceEquals(obj, null) && obj && _availableSet.Contains(obj))
                 {
-                    availableSet.Remove(obj);
-                    idleTimes.Remove(obj);
+                    _availableSet.Remove(obj);
+                    _idleTimes.Remove(obj);
                     Object.Destroy(obj);
-                    destroyedCount++;
+                    _destroyedCount++;
                     destroyed++;
                 }
             }
@@ -218,17 +231,16 @@ public class PoolingSystem : MonoBehaviour, IPoolable
             if (destroyed > 0)
             {
                 var tempQueue = new Queue<GameObject>();
-                while (availableObjects.Count > 0)
+                while (_availableObjects.Count > 0)
                 {
-                    var obj = availableObjects.Dequeue();
-                    if (availableSet.Contains(obj))
+                    var obj = _availableObjects.Dequeue();
+                    if (_availableSet.Contains(obj))
                     {
                         tempQueue.Enqueue(obj);
                     }
                 }
-                availableObjects = tempQueue;
+                _availableObjects = tempQueue;
             }
-
 #if UNITY_EDITOR
             if (destroyed > 0)
             {
@@ -239,44 +251,44 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 
         if (enableAutoShrink)
         {
-            isAutoShrinkRunning = true;
+            _isAutoShrinkRunning = true;
             yield return StartCoroutine(AutoShrinkCoroutine());
         }
         else
         {
-            isAutoShrinkRunning = false;
+            _isAutoShrinkRunning = false;
         }
     }
 
     public virtual GameObject GetObject()
     {
-        if (Time.time - lastActiveCleanTime > ACTIVE_CLEAN_INTERVAL)
+        if (Time.time - _lastActiveCleanTime > ActiveCleanInterval)
         {
             CleanActiveObjects();
-            lastActiveCleanTime = Time.time;
+            _lastActiveCleanTime = Time.time;
         }
 
-        if (consecutiveNulls >= IMMEDIATE_CLEAN_THRESHOLD)
+        if (_consecutiveNulls >= ImmediateCleanThreshold)
         {
             CleanAvailableQueue();
-            consecutiveNulls = 0;
+            _consecutiveNulls = 0;
         }
 
         GameObject instance = null;
-        while (availableObjects.Count > 0)
+        while (_availableObjects.Count > 0)
         {
-            instance = availableObjects.Dequeue();
+            instance = _availableObjects.Dequeue();
             bool isValidUnityObject = !ReferenceEquals(instance, null) && instance;
 
             if (!isValidUnityObject)
             {
                 if (!ReferenceEquals(instance, null))
                 {
-                    availableSet.Remove(instance);
-                    idleTimes.Remove(instance);
+                    _availableSet.Remove(instance);
+                    _idleTimes.Remove(instance);
                 }
-                destroyedCount++;
-                consecutiveNulls++;
+                _destroyedCount++;
+                _consecutiveNulls++;
                 if (TotalObjectCount() < maxPoolSize)
                 {
                     instance = CreateNewObjectDirect();
@@ -284,9 +296,9 @@ public class PoolingSystem : MonoBehaviour, IPoolable
                     {
                         if (enableAutoShrink)
                         {
-                            idleTimes[instance] = Time.time;
+                            _idleTimes[instance] = Time.time;
                         }
-                        consecutiveNulls = 0;
+                        _consecutiveNulls = 0;
                         break;
                     }
                 }
@@ -294,11 +306,11 @@ public class PoolingSystem : MonoBehaviour, IPoolable
                 continue;
             }
 
-            consecutiveNulls = 0;
-            availableSet.Remove(instance);
-            idleTimes.Remove(instance);
+            _consecutiveNulls = 0;
+            _availableSet.Remove(instance);
+            _idleTimes.Remove(instance);
 
-            if (!activeSet.Contains(instance))
+            if (!_activeSet.Contains(instance))
             {
                 break;
             }
@@ -309,13 +321,17 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 
         if (ReferenceEquals(instance, null) || !instance)
         {
+#if UNITY_EDITOR
             Debug.LogWarning("[PoolingSystem] Pool exhausted or failed to create object.");
+#endif
             return null;
         }
 
-        if (activeSet.Contains(instance))
+        if (_activeSet.Contains(instance))
         {
+#if UNITY_EDITOR
             Debug.LogError("[PoolingSystem] Pool returned already active object!");
+#endif
             return null;
         }
 
@@ -341,16 +357,15 @@ public class PoolingSystem : MonoBehaviour, IPoolable
                     }
                     else
                     {
-                        availableObjects.Enqueue(obj);
-                        availableSet.Add(obj);
+                        _availableObjects.Enqueue(obj);
+                        _availableSet.Add(obj);
                         if (enableAutoShrink)
                         {
-                            idleTimes[obj] = Time.time;
+                            _idleTimes[obj] = Time.time;
                         }
                     }
                 }
             }
-
 #if UNITY_EDITOR
             Debug.Log("[PoolingSystem] Pool batch expanded.");
 #endif
@@ -365,11 +380,13 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     {
         if (ReferenceEquals(objectToReturn, null) || !objectToReturn)
         {
+#if UNITY_EDITOR
             Debug.LogWarning("[PoolingSystem] Tried to return null or destroyed object.");
+#endif
             return;
         }
 
-        if (!activeSet.Contains(objectToReturn))
+        if (!_activeSet.Contains(objectToReturn))
         {
 #if UNITY_EDITOR
             Debug.LogWarning("[PoolingSystem] Tried to return object which is not active.");
@@ -382,15 +399,15 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 
     public virtual void OnPoolReturn(GameObject objectToReturn)
     {
-        activeObjects.Remove(objectToReturn);
-        activeSet.Remove(objectToReturn);
+        _activeObjects.Remove(objectToReturn);
+        _activeSet.Remove(objectToReturn);
 
         if (!ReferenceEquals(objectToReturn, null) && objectToReturn && objectToReturn.activeInHierarchy)
         {
             objectToReturn.SetActive(false);
         }
 
-        if (!availableSet.Contains(objectToReturn))
+        if (!_availableSet.Contains(objectToReturn))
         {
             if (!ReferenceEquals(objectToReturn, null) && objectToReturn)
             {
@@ -399,22 +416,25 @@ public class PoolingSystem : MonoBehaviour, IPoolable
                 objectToReturn.transform.localRotation = Quaternion.identity;
             }
 
-            availableObjects.Enqueue(objectToReturn);
-            availableSet.Add(objectToReturn);
+            _availableObjects.Enqueue(objectToReturn);
+            _availableSet.Add(objectToReturn);
 
             if (enableAutoShrink)
             {
-                idleTimes[objectToReturn] = Time.time;
+                if (!ReferenceEquals(objectToReturn, null) && objectToReturn)
+                {
+                    _idleTimes[objectToReturn] = Time.time;
+                }
             }
 
-            recycledCount++;
+            _recycledCount++;
         }
     }
 
     public virtual void OnPoolRetrieve(GameObject objectToRetrieve)
     {
-        activeObjects.Add(objectToRetrieve);
-        activeSet.Add(objectToRetrieve);
+        _activeObjects.Add(objectToRetrieve);
+        _activeSet.Add(objectToRetrieve);
 
         if (!ReferenceEquals(objectToRetrieve, null) && objectToRetrieve)
         {
@@ -423,25 +443,28 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 
         if (enableAutoShrink)
         {
-            idleTimes.Remove(objectToRetrieve);
+            if (!ReferenceEquals(objectToRetrieve, null) && objectToRetrieve)
+            {
+                _idleTimes.Remove(objectToRetrieve);
+            }
         }
     }
 
-    public void CleanActiveObjects()
+    private void CleanActiveObjects()
     {
         int removedCount = 0;
-        for (int i = activeObjects.Count - 1; i >= 0; i--)
+        for (int i = _activeObjects.Count - 1; i >= 0; i--)
         {
-            var obj = activeObjects[i];
+            var obj = _activeObjects[i];
             if (ReferenceEquals(obj, null) || !obj)
             {
-                activeObjects.RemoveAt(i);
+                _activeObjects.RemoveAt(i);
                 if (!ReferenceEquals(obj, null))
                 {
-                    activeSet.Remove(obj);
-                    idleTimes.Remove(obj);
+                    _activeSet.Remove(obj);
+                    _idleTimes.Remove(obj);
                 }
-                destroyedCount++;
+                _destroyedCount++;
                 removedCount++;
             }
         }
@@ -454,7 +477,7 @@ public class PoolingSystem : MonoBehaviour, IPoolable
 #endif
     }
 
-    public void WarmPool(int targetSize)
+    private void WarmPool(int targetSize)
     {
         targetSize = Mathf.Min(targetSize, maxPoolSize);
         while (TotalObjectCount() < targetSize)
@@ -462,7 +485,9 @@ public class PoolingSystem : MonoBehaviour, IPoolable
             var obj = CreateNewPoolObject();
             if (ReferenceEquals(obj, null) || !obj)
             {
+#if UNITY_EDITOR
                 Debug.LogWarning("[PoolingSystem] Failed to create object during pool warming");
+#endif
                 break;
             }
         }
@@ -476,21 +501,21 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     {
         CleanAvailableQueue();
         CleanActiveObjects();
-        consecutiveNulls = 0;
-        lastActiveCleanTime = Time.time;
+        _consecutiveNulls = 0;
+        _lastActiveCleanTime = Time.time;
     }
 
-    public int TotalObjectCount() => availableObjects.Count + activeObjects.Count;
-    public int AvailableObjectCount() => availableObjects.Count;
-    public int ActiveObjectCount() => activeObjects.Count;
+    public int TotalObjectCount() => _availableObjects.Count + _activeObjects.Count;
+    public int AvailableObjectCount() => _availableObjects.Count;
+    public int ActiveObjectCount() => _activeObjects.Count;
 
-    public int CreatedCount => createdCount;
-    public int RecycledCount => recycledCount;
-    public int DestroyedCount => destroyedCount;
+    public int CreatedCount => _createdCount;
+    public int RecycledCount => _recycledCount;
+    public int DestroyedCount => _destroyedCount;
 
-    public float HitRatio => createdCount > 0 ? (float)recycledCount / (createdCount + recycledCount) : 0f;
-    public float PoolUtilization => maxPoolSize > 0 ? (float)activeObjects.Count / maxPoolSize : 0f;
-    public float PoolHealth => TotalObjectCount() > 0 ? 1f - ((float)destroyedCount / (createdCount + destroyedCount)) : 1f;
+    public float HitRatio => _createdCount > 0 ? (float)_recycledCount / (_createdCount + _recycledCount) : 0f;
+    public float PoolUtilization => maxPoolSize > 0 ? (float)_activeObjects.Count / maxPoolSize : 0f;
+    public float PoolHealth => TotalObjectCount() > 0 ? 1f - ((float)_destroyedCount / (_createdCount + _destroyedCount)) : 1f;
 
 #if UNITY_EDITOR
     [ContextMenu("Validate Pool Integrity")]
@@ -498,8 +523,8 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     {
         ForceCleanAll();
         Debug.Log($"[PoolingSystem] Pool Validation Complete:\n" +
-                  $"Available: {availableObjects.Count}, Active: {activeObjects.Count}\n" +
-                  $"Created: {createdCount}, Recycled: {recycledCount}, Destroyed: {destroyedCount}\n" +
+                  $"Available: {_availableObjects.Count}, Active: {_activeObjects.Count}\n" +
+                  $"Created: {_createdCount}, Recycled: {_recycledCount}, Destroyed: {_destroyedCount}\n" +
                   $"Hit Ratio: {HitRatio:P1}, Utilization: {PoolUtilization:P1}, Health: {PoolHealth:P1}");
     }
 

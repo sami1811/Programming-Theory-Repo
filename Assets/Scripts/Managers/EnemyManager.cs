@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class EnemyManager : PoolingSystem
@@ -5,26 +6,27 @@ public class EnemyManager : PoolingSystem
     [Header("Enemy Target Settings")]
     public GameObject targetObject;
 
-    private SpawningSystem mySpawner;
+    private SpawningSystem _mySpawner;
 
     private void Start()
     {
+        StartAutoShrink();
         InitializeStart();
     }
 
     private void InitializeStart()
     {
-        mySpawner = GetComponent<SpawningSystem>();
+        _mySpawner = GetComponent<SpawningSystem>();
 
-        if (mySpawner != null)
+        if (!_mySpawner)
         {
-            mySpawner.SpawnInitialObject();
+#if UNITY_EDITOR
+            Debug.LogError("[Enemy Manager] Spawn manager is missing!");
+#endif
         }
-    }
-
-    private void Update()
-    {
-        mySpawner?.RespawnObject();
-        StartAutoShrink();
+        else
+        {
+            _mySpawner.StartProgressiveSpawning();
+        }
     }
 }

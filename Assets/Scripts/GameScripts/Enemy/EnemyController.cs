@@ -2,40 +2,43 @@ using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
-    [SerializeField] private float moveSpeed = 2f;
+    private float _moveSpeed;
+    private const float MinMoveSpeed = 1.5f;
+    private const float MaxMoveSpeed = 5f;
 
-    private EnemyManager enemyManager;
-    private GameObject targetObj;
+    private EnemyManager _enemyManager;
+    private GameObject _targetObj;
 
     private void Start()
     {
-        if(enemyManager == null)
+        if(!_enemyManager)
         {
-            enemyManager = GetComponentInParent<EnemyManager>();
+            _enemyManager = GetComponentInParent<EnemyManager>();
 
-            if(enemyManager == null)
+            if(!_enemyManager)
             {
                 Debug.LogError("No enemy manager found!");
             }
 
-            targetObj = enemyManager.targetObject;
+            _moveSpeed = Random.Range(MinMoveSpeed, MaxMoveSpeed);
+            _targetObj = _enemyManager.targetObject;
             Debug.Log($"[Enemy Controller] Target found!!!");
         }
     }
 
     private void Update()
     {
-        moveEnemy();
+        MoveEnemy();
     }
 
-    private void moveEnemy()
+    private void MoveEnemy()
     {
-        if (targetObj != null)
+        if (_targetObj)
         {
-            Vector3 targetPos = targetObj.transform.position;
+            Vector3 targetPos = _targetObj.transform.position;
             Vector3 newPos = new Vector3(targetPos.x, transform.position.y, targetPos.z);
             Vector3 newDir = (newPos - transform.position).normalized;
-            Vector3 moveTo = newDir * moveSpeed * Time.deltaTime;
+            Vector3 moveTo = newDir * (_moveSpeed * Time.deltaTime);
 
             transform.position += moveTo;
         }

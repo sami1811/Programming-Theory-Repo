@@ -9,20 +9,20 @@ public class HealthBarManager : PoolingSystem
     [Header("Canvas Settings")]
     [SerializeField] private Vector3 healthBarOffset;
     [SerializeField] private Vector3 healthBarScale;
-    [SerializeField] private float showAtDistance = 5f;
+    [SerializeField] private float showAtDistance;
 
     [Header("Player Settings")]
     [SerializeField] private Transform playerTransform;
 
-    private Dictionary<HealthSystem, GameObject> activeCanvases = new Dictionary<HealthSystem, GameObject>();
-    private Dictionary<HealthSystem, TMP_Text> healthText = new Dictionary<HealthSystem, TMP_Text>();
-    private HashSet<HealthSystem> registeredHealthSystems = new HashSet<HealthSystem>();
+    private readonly Dictionary<HealthSystem, GameObject> _activeCanvases = new Dictionary<HealthSystem, GameObject>();
+    private readonly Dictionary<HealthSystem, TMP_Text> _healthText = new Dictionary<HealthSystem, TMP_Text>();
+    private readonly HashSet<HealthSystem> _registeredHealthSystems = new HashSet<HealthSystem>();
 
-    private Camera mainCamera;
-    private float updateInterval = 0.1f;
-    private float nextUpdateTime = 0f;
+    private Camera _mainCamera;
+    private const float UpdateInterval = 0.1f;
+    private float _nextUpdateTime;
 
-    private SpawningSystem spawner;
+    private SpawningSystem _spawner;
 
     protected override void Awake()
     {
@@ -40,11 +40,11 @@ public class HealthBarManager : PoolingSystem
         }
 
         Instance = this;
-        mainCamera = Camera.main;
+        _mainCamera = Camera.main;
 
         if (playerTransform == null)
         {
-            playerTransform = mainCamera?.transform;
+            playerTransform = _mainCamera?.transform;
         }
     }
 
@@ -52,12 +52,12 @@ public class HealthBarManager : PoolingSystem
     {
         StartAutoShrink();
 
-        if(playerTransform == null) return;
+        if(!playerTransform) return;
 
-        if (Time.time >= nextUpdateTime)
+        if (Time.time >= _nextUpdateTime)
         {
             UpdateCanvasStates();
-            nextUpdateTime += updateInterval;
+            _nextUpdateTime += UpdateInterval;
         }
     }
 
@@ -73,9 +73,9 @@ public class HealthBarManager : PoolingSystem
         // Create a temp list to avoid modifying collection during iteration
         List<HealthSystem> toUnregister = new List<HealthSystem>();
 
-        foreach (HealthSystem hs in registeredHealthSystems)
+        foreach (HealthSystem hs in _registeredHealthSystems)
         {
-            if (hs == null)
+            if (!hs)
             {
                 toUnregister.Add(hs);
                 continue;
@@ -87,20 +87,20 @@ public class HealthBarManager : PoolingSystem
             if (withinRange)
             {
                 // Ensure canvas exists
-                if (!activeCanvases.TryGetValue(hs, out GameObject canvasObj) || canvasObj == null)
+                if (!_activeCanvases.TryGetValue(hs, out GameObject canvasObj) || !canvasObj)
                 {
                     AssignCanvas(hs);
-                    canvasObj = activeCanvases[hs];
+                    canvasObj = _activeCanvases[hs];
                 }
 
                 // Update position + rotation
-                if (canvasObj != null)
+                if (canvasObj)
                 {
                     canvasObj.transform.position = hs.transform.position + healthBarOffset;
 
-                    if (mainCamera != null)
+                    if (_mainCamera)
                     {
-                        Vector3 lookDir = canvasObj.transform.position - mainCamera.transform.position;
+                        Vector3 lookDir = canvasObj.transform.position - _mainCamera.transform.position;
                         canvasObj.transform.rotation = Quaternion.LookRotation(lookDir);
                     }
                 }
@@ -108,7 +108,7 @@ public class HealthBarManager : PoolingSystem
             else
             {
                 // Hide if active but too far
-                if (activeCanvases.ContainsKey(hs))
+                if (_activeCanvases.ContainsKey(hs))
                 {
                     ReturnCanvas(hs);
                 }
@@ -118,7 +118,7 @@ public class HealthBarManager : PoolingSystem
         // Cleanup null health systems
         foreach (var dead in toUnregister)
         {
-            registeredHealthSystems.Remove(dead);
+            _registeredHealthSystems.Remove(dead);
         }
     }
 
@@ -126,9 +126,11 @@ public class HealthBarManager : PoolingSystem
     {
         GameObject canvasObj = GetObject();
 
-        if(canvasObj == null)
+        if(!canvasObj)
         {
+#if UNITY_EDITOR
             Debug.LogWarning($"No canvas found!");
+#endif
             return;
         }
 
@@ -136,39 +138,39 @@ public class HealthBarManager : PoolingSystem
 
         TMP_Text txt = canvasObj.GetComponentInChildren<TMP_Text>();
 
-        if(txt != null)
+        if(txt)
         {
             txt.text = hs.GetCurrentHealth().ToString();
-            healthText[hs] = txt;
+            _healthText[hs] = txt;
         }
 
-        activeCanvases[hs] = canvasObj;
+        _activeCanvases[hs] = canvasObj;
     }
 
-    public void UpdateCanvasPosition(GameObject gameObject, Vector3 setPosition, Vector3 yOffset)
+    private void UpdateCanvasPosition(GameObject gameObj, Vector3 setPosition, Vector3 yOffset)
     {
-        if(gameObject != null)
+        if(gameObj)
         {
-            gameObject.transform.position = setPosition + yOffset;
+            gameObj.transform.position = setPosition + yOffset;
         }
     }
 
     public void RegisterHealthSystems(HealthSystem hs)
     {
-        if (hs != null && !registeredHealthSystems.Contains(hs))
+        if (hs)
         {
-            registeredHealthSystems.Add(hs);
+            _registeredHealthSystems.Add(hs);
             //Debug.Log($"[HealthBarManager] Registered health system {hs.gameObject.name}");
         }
     }
 
     public void UnregisterHealthSystems(HealthSystem hs)
     {
-        if (hs == null) return;
+        if (!hs) return;
 
-        registeredHealthSystems.Remove(hs);
+        _registeredHealthSystems.Remove(hs);
 
-        if(activeCanvases.ContainsKey(hs))
+        if(_activeCanvases.ContainsKey(hs))
         {
             ReturnCanvas(hs);
         }
@@ -176,17 +178,17 @@ public class HealthBarManager : PoolingSystem
 
     private void ReturnCanvas(HealthSystem hs)
     {
-        if (activeCanvases.TryGetValue(hs, out GameObject canvasObj))
+        if (_activeCanvases.TryGetValue(hs, out GameObject canvasObj))
         {
-            healthText.Remove(hs);
-            activeCanvases.Remove(hs);
+            _healthText.Remove(hs);
+            _activeCanvases.Remove(hs);
             OnPoolReturn(canvasObj);
         }
     }
 
     public void UpdateHealthText(HealthSystem hs, int currentHealth)
     {
-        if (hs != null && healthText.TryGetValue(hs, out TMP_Text txt) && txt != null)
+        if (hs && _healthText.TryGetValue(hs, out TMP_Text txt) && txt)
         {
             txt.text = currentHealth.ToString();
         }
@@ -198,10 +200,10 @@ public class HealthBarManager : PoolingSystem
 
         Canvas canvas = objectToRetrieve.GetComponent<Canvas>();
 
-        if (canvas != null)
+        if (canvas)
         {
             canvas.renderMode = RenderMode.WorldSpace;
-            canvas.worldCamera = mainCamera;
+            canvas.worldCamera = _mainCamera;
             objectToRetrieve.transform.localScale = healthBarScale;
         }
     }

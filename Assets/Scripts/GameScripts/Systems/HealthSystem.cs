@@ -3,29 +3,29 @@
 public class HealthSystem : MonoBehaviour, IDamageable
 {
     [Header("Health Settings")]
-    [SerializeField] private int maxHealth = 100;
-    [SerializeField] private int damagePerHit = 50;
+    [SerializeField] private int maxHealth;
+    [SerializeField] private int damagePerHit;
     [SerializeField] private LayerMask damageLayer;
+    [SerializeField] private bool spawningRequired;
 
-    private int currentHealth;
+    private int _currentHealth;
 
-    private SpawningSystem spawner;
-    private PoolingSystem poolManager;
+    private SpawningSystem _spawner;
 
     private void OnEnable()
     {
-        currentHealth = maxHealth;
+        _currentHealth = maxHealth;
 
-        if (HealthBarManager.Instance != null)
+        if (HealthBarManager.Instance)
         {
             HealthBarManager.Instance.RegisterHealthSystems(this);
-            HealthBarManager.Instance.UpdateHealthText(this, currentHealth);
+            HealthBarManager.Instance.UpdateHealthText(this, _currentHealth);
         }
     }
 
     private void OnDisable()
     {
-        if (HealthBarManager.Instance != null)
+        if (HealthBarManager.Instance)
         {
             HealthBarManager.Instance.UnregisterHealthSystems(this);
         }
@@ -33,7 +33,7 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
     private void OnDestroy()
     {
-        if (HealthBarManager.Instance != null)
+        if (HealthBarManager.Instance)
         {
             HealthBarManager.Instance.UnregisterHealthSystems(this);
         }
@@ -46,59 +46,50 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
     private void InitializeStart()
     {
-        if (spawner == null)
+        if(!spawningRequired) return;
+        
+        if (!_spawner)
         {
-            spawner = GetComponentInParent<SpawningSystem>();
-            if (spawner != null)
+            _spawner = GetComponentInParent<SpawningSystem>();
+            if (_spawner)
             {
+#if UNITY_EDITOR
                 Debug.Log($"Spawn manager found!");
+#endif
             }
             else
             {
+#if UNITY_EDITOR
                 Debug.LogError($"Spawn manager is missing!");
-            }
-        }
-
-        if (poolManager == null)
-        {
-            poolManager = GetComponentInParent<PoolingSystem>();
-            if (poolManager != null)
-            {
-                Debug.Log($"Pool manager found!");
-            }
-            else
-            {
-                Debug.LogError($"Pool manager is missing!");
+#endif
             }
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        //layer detection
+        if (other.gameObject.layer == LayerMask.NameToLayer("Cube"))
+        {
+            _currentHealth = 0;
+            Die();
+        }
+        
         if (((1 << other.gameObject.layer) & damageLayer) != 0)
         {
             TakeDamage(damagePerHit);
         }
-
-        /*if (other.CompareTag("Player") && IsAlive())
-        {
-            TakeDamage(damagePerHit);
-        }*/
     }
-
-    public virtual void TakeDamage(int damage)
+    
+    public void TakeDamage(int damage)
     {
         if (damage < 0)
             return;
 
-        currentHealth = Mathf.Max(0, currentHealth - damage);
+        _currentHealth = Mathf.Max(0, _currentHealth - damage);
 
         HealthBarManager.Instance.UpdateHealthText(this, GetCurrentHealth());
-
-        //Debug.Log(gameObject.name + " took " + damage + " now health is " + currentHealth);
-
-        if (currentHealth <= 0)
+        
+        if (_currentHealth <= 0)
         {
             Die();
         }
@@ -106,25 +97,26 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
     public int GetCurrentHealth()
     {
-        return currentHealth;
+        return _currentHealth;
     }
 
-    public virtual bool IsAlive()
+    public bool IsAlive()
     {
-        return currentHealth > 0;
+        return _currentHealth > 0;
     }
 
-    public void Die()
+    private void Die()
     {
-        if (HealthBarManager.Instance != null)
+        if (HealthBarManager.Instance)
         {
             HealthBarManager.Instance.UnregisterHealthSystems(this);
         }
 
-        currentHealth = maxHealth;
-        spawner?.OnObjectReturned(gameObject);
-        poolManager?.ReturnToPool(gameObject);
+        _currentHealth = maxHealth;
 
-        //Debug.Log(gameObject.name + " is dead!");
+        if (spawningRequired)
+        {
+            _spawner?.ReturnObjectToPool(gameObject);
+        }
     }
 }

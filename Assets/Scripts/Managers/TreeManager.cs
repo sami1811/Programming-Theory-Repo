@@ -2,26 +2,28 @@ using UnityEngine;
 
 public class TreeManager : PoolingSystem
 {
-    private SpawningSystem mySpawner;
-
+    private SpawningSystem _mySpawner;
+    
     private void Start()
     {
+        StartAutoShrink();
         InitializeStart();
     }
 
     private void InitializeStart()
     {
-        mySpawner = GetComponent<SpawningSystem>();
+        _mySpawner = GetComponent<SpawningSystem>();
 
-        if (mySpawner != null)
+        if (!_mySpawner)
         {
-            mySpawner.SpawnInitialObject();
+#if UNITY_EDITOR
+            Debug.LogError("[Tree Manager] Spawn manager is missing!");
+#endif
         }
-    }
-
-    private void Update()
-    {
-        mySpawner?.RespawnObject();
-        StartAutoShrink();
+        else
+        {
+            _mySpawner.SpawnInitialObjects();
+            _mySpawner.StartProgressiveSpawning();
+        }
     }
 }

@@ -3,22 +3,22 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [Header("Player Settings")]
-    [SerializeField] private float moveSpeed = 0;
+    [SerializeField] private float moveSpeed;
     [SerializeField] private Camera playerCamera;
 
     [Header("Bound Settings")]
-    [SerializeField] private float xBound = 0f;
-    [SerializeField] private float zBound = 0f;
+    [SerializeField] private float xBound;
+    [SerializeField] private float zBound;
 
     [Header("Player Marker Settings")]
     [SerializeField] private GameObject playerMarkerObj;
-    [SerializeField] private float animationSpeed = 0f;
+    [SerializeField] private float animationSpeed;
 
     [SerializeField] private LayerMask groundLayer = 1;
 
     private void Awake()
     {
-        if (playerMarkerObj == null)
+        if (!playerMarkerObj)
         {
             playerMarkerObj = GameObject.Find("PlayerMarker").GetComponent<GameObject>();
         }
@@ -39,7 +39,7 @@ public class PlayerController : MonoBehaviour
         float vertical = Input.GetAxis("Vertical");
 
         Vector3 direction = transform.forward * vertical + transform.right * horizontal;
-        Vector3 velocity = direction * moveSpeed * Time.deltaTime;
+        Vector3 velocity = direction * (moveSpeed * Time.deltaTime);
 
         playerPos += velocity;
 
@@ -71,22 +71,10 @@ public class PlayerController : MonoBehaviour
 
     private void AnimatePlayerMarker()
     {
-        if (playerMarkerObj != null)
-        {
-            float t = Mathf.PingPong(Time.time * animationSpeed, 1f);
-            float animateY = Mathf.Lerp(1.5f, 2f, t);
-            playerMarkerObj.transform.position = transform.position + new Vector3(0, animateY, 0);
-        }
-    }
-}
-
-
-/*private void AnimatePlayerMarker()
-{
-    if (playerMarkerObj != null)
-    {
+        if (!playerMarkerObj) return;
+        
         float t = Mathf.PingPong(Time.time * animationSpeed, 1f);
         float animateY = Mathf.Lerp(1.5f, 2f, t);
         playerMarkerObj.transform.position = transform.position + new Vector3(0, animateY, 0);
     }
-}*/
+}
