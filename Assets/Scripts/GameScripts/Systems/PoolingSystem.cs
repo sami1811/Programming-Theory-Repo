@@ -194,71 +194,76 @@ public class PoolingSystem : MonoBehaviour, IPoolable
     }
 
     private IEnumerator AutoShrinkCoroutine()
+{
+    while (enableAutoShrink)
     {
         yield return new WaitForSeconds(shrinkCheckInterval);
 
-        if (_availableObjects.Count > minPoolSize)
+        int availableCount = _availableObjects.Count;
+        
+        // Early exit if nothing to shrink
+        if (availableCount <= minPoolSize)
+            continue;
+
+        int maxToDestroy = availableCount - minPoolSize;
+        int destroyed = 0;
+        float currentTime = Time.time;
+
+        // Use a temp list to avoid multiple iterations
+        _toDestroy.Clear();
+
+        // Only check objects that are actually in the available pool
+        foreach (var obj in _availableSet)
         {
-            _toDestroy.Clear();
-            int destroyed = 0;
-
-            foreach (var pair in _idleTimes)
+            if (_idleTimes.TryGetValue(obj, out float idleTime))
             {
-                if (Time.time - pair.Value > idleTimeOut && _availableSet.Contains(pair.Key))
+                if (currentTime - idleTime > idleTimeOut)
                 {
-                    _toDestroy.Add(pair.Key);
+                    _toDestroy.Add(obj);
+                    
+                    if (_toDestroy.Count >= maxToDestroy)
+                        break; // Stop early when we have enough
                 }
             }
+        }
 
-            int maxToDestroy = _availableObjects.Count - minPoolSize;
-            if (_toDestroy.Count > maxToDestroy)
+        // Destroy marked objects
+        foreach (var obj in _toDestroy)
+        {
+            if (!ReferenceEquals(obj, null) && obj)
             {
-                _toDestroy.RemoveRange(maxToDestroy, _toDestroy.Count - maxToDestroy);
+                _availableSet.Remove(obj);
+                _idleTimes.Remove(obj);
+                Object.Destroy(obj);
+                _destroyedCount++;
+                destroyed++;
             }
+        }
 
-            foreach (var obj in _toDestroy)
+        // Rebuild queue only if we actually destroyed something
+        if (destroyed > 0)
+        {
+            Queue<GameObject> newQueue = new Queue<GameObject>(availableCount - destroyed);
+            
+            while (_availableObjects.Count > 0)
             {
-                if (!ReferenceEquals(obj, null) && obj && _availableSet.Contains(obj))
+                var obj = _availableObjects.Dequeue();
+                if (_availableSet.Contains(obj)) // Only re-add if still valid
                 {
-                    _availableSet.Remove(obj);
-                    _idleTimes.Remove(obj);
-                    Object.Destroy(obj);
-                    _destroyedCount++;
-                    destroyed++;
+                    newQueue.Enqueue(obj);
                 }
             }
+            
+            _availableObjects = newQueue;
 
-            if (destroyed > 0)
-            {
-                var tempQueue = new Queue<GameObject>();
-                while (_availableObjects.Count > 0)
-                {
-                    var obj = _availableObjects.Dequeue();
-                    if (_availableSet.Contains(obj))
-                    {
-                        tempQueue.Enqueue(obj);
-                    }
-                }
-                _availableObjects = tempQueue;
-            }
 #if UNITY_EDITOR
-            if (destroyed > 0)
-            {
-                Debug.Log("[PoolingSystem] Auto-shrunk pool due to idle timeout.");
-            }
+            Debug.Log($"[PoolingSystem] Auto-shrunk pool: destroyed {destroyed} idle objects. Available: {_availableObjects.Count}/{minPoolSize}");
 #endif
         }
-
-        if (enableAutoShrink)
-        {
-            _isAutoShrinkRunning = true;
-            yield return StartCoroutine(AutoShrinkCoroutine());
-        }
-        else
-        {
-            _isAutoShrinkRunning = false;
-        }
     }
+
+    _isAutoShrinkRunning = false;
+}
 
     public virtual GameObject GetObject()
     {

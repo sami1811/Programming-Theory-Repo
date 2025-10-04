@@ -5,6 +5,7 @@ public class PlayerController : MonoBehaviour
     [Header("Player Settings")]
     [SerializeField] private float moveSpeed;
     [SerializeField] private Camera playerCamera;
+    [SerializeField] private LayerMask groundLayer = 1;
 
     [Header("Bound Settings")]
     [SerializeField] private float xBound;
@@ -14,14 +15,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GameObject playerMarkerObj;
     [SerializeField] private float animationSpeed;
 
-    [SerializeField] private LayerMask groundLayer = 1;
-
+    [Header("Camera Settings")]
+    [SerializeField] private float maxTiltAngle; // Maximum downward tilt
+    [SerializeField] private float tiltDistance; 
+    
+    private Camera _mainCamera;
+    private float _initialDistance;
+    private bool _initialized;
+    private Quaternion _initialCameraRotation;
+    
     private void Awake()
     {
-        if (!playerMarkerObj)
-        {
-            playerMarkerObj = GameObject.Find("PlayerMarker").GetComponent<GameObject>();
-        }
+        InitializeAwake();
     }
 
     private void Update()
@@ -31,6 +36,48 @@ public class PlayerController : MonoBehaviour
         AnimatePlayerMarker();
     }
 
+    private void LateUpdate()
+    {
+        MoveCamera();
+    }
+
+    private void InitializeAwake()
+    {
+        _mainCamera = Camera.main;
+        
+        // Store initial values once
+        if (!_initialized)
+        {
+            if (_mainCamera)
+            {
+                _initialDistance = Vector3.Distance(transform.position, _mainCamera.transform.position);
+                _initialCameraRotation = _mainCamera.transform.rotation;
+            }
+
+            _initialized = true;
+        }
+        
+        if (!playerMarkerObj)
+        {
+            playerMarkerObj = GameObject.Find("PlayerMarker").GetComponent<GameObject>();
+        }
+    }
+
+    private void MoveCamera()
+    {
+        if (_mainCamera)
+        {
+            float currentDistance = Vector3.Distance(transform.position, _mainCamera.transform.position);
+            float distanceTraveled = currentDistance - _initialDistance;
+        
+            float tiltAngle = Mathf.Clamp(distanceTraveled / tiltDistance, 0f, 1f) * maxTiltAngle;
+        
+            // Add tilt to the initial rotation
+            Vector3 initialEuler = _initialCameraRotation.eulerAngles;
+            _mainCamera.transform.rotation = Quaternion.Euler(initialEuler.x + tiltAngle, initialEuler.y, initialEuler.z);
+        }
+    }
+    
     private void MovePlayer()
     {
         Vector3 playerPos = transform.position;

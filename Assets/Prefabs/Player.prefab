@@ -141,13 +141,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControlller
   moveSpeed: 7
   playerCamera: {fileID: 0}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
   xBound: 25
   zBound: 20
   playerMarkerObj: {fileID: 6818096446185233346}
   animationSpeed: 2
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 1
+  maxTiltAngle: -8
+  tiltDistance: 25
 --- !u!54 &8848117716995978009
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -133,6 +133,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   spawningRequired: 1
+  healthBarOffset: {x: 0, y: 2, z: 0}
+  showAtDistance: 4
 --- !u!114 &3475553167952075726
 MonoBehaviour:
   m_ObjectHideFlags: 0

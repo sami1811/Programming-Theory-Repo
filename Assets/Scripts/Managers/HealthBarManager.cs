@@ -7,15 +7,15 @@ public class HealthBarManager : PoolingSystem
     public static HealthBarManager Instance { get; private set; }
 
     [Header("Canvas Settings")]
-    [SerializeField] private Vector3 healthBarOffset;
     [SerializeField] private Vector3 healthBarScale;
-    [SerializeField] private float showAtDistance;
 
     [Header("Player Settings")]
     [SerializeField] private Transform playerTransform;
 
     private readonly Dictionary<HealthSystem, GameObject> _activeCanvases = new Dictionary<HealthSystem, GameObject>();
     private readonly Dictionary<HealthSystem, TMP_Text> _healthText = new Dictionary<HealthSystem, TMP_Text>();
+    private readonly Dictionary<HealthSystem, Vector3> _healthBarOffset = new Dictionary<HealthSystem, Vector3>();
+    private readonly Dictionary<HealthSystem, float> _showAtDistance = new Dictionary<HealthSystem, float>();
     private readonly HashSet<HealthSystem> _registeredHealthSystems = new HashSet<HealthSystem>();
 
     private Camera _mainCamera;
@@ -33,7 +33,7 @@ public class HealthBarManager : PoolingSystem
     {
         base.Awake();
 
-        if (Instance != null && Instance != this)
+        if (Instance && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -42,7 +42,7 @@ public class HealthBarManager : PoolingSystem
         Instance = this;
         _mainCamera = Camera.main;
 
-        if (playerTransform == null)
+        if (!playerTransform)
         {
             playerTransform = _mainCamera?.transform;
         }
@@ -68,8 +68,6 @@ public class HealthBarManager : PoolingSystem
 
     private void UpdateCanvasStates()
     {
-        float showDistanceSqr = showAtDistance * showAtDistance;
-
         // Create a temp list to avoid modifying collection during iteration
         List<HealthSystem> toUnregister = new List<HealthSystem>();
 
@@ -81,6 +79,8 @@ public class HealthBarManager : PoolingSystem
                 continue;
             }
 
+            float showDistance = _showAtDistance.TryGetValue(hs, out float distance) ? distance : 10f;
+            float showDistanceSqr = showDistance * showDistance;
             float distanceSqr = (playerTransform.position - hs.transform.position).sqrMagnitude;
             bool withinRange = distanceSqr <= showDistanceSqr;
 
@@ -96,6 +96,7 @@ public class HealthBarManager : PoolingSystem
                 // Update position + rotation
                 if (canvasObj)
                 {
+                    Vector3 offset = _healthBarOffset.TryGetValue(hs, out Vector3 healthBarOffset ) ? healthBarOffset : Vector3.up;
                     canvasObj.transform.position = hs.transform.position + healthBarOffset;
 
                     if (_mainCamera)
@@ -119,6 +120,10 @@ public class HealthBarManager : PoolingSystem
         foreach (var dead in toUnregister)
         {
             _registeredHealthSystems.Remove(dead);
+            _healthBarOffset.Remove(dead);
+            _showAtDistance.Remove(dead);
+            _healthText.Remove(dead);
+            _activeCanvases.Remove(dead); 
         }
     }
 
@@ -134,6 +139,7 @@ public class HealthBarManager : PoolingSystem
             return;
         }
 
+        Vector3 offset = _healthBarOffset.TryGetValue(hs, out Vector3 healthBarOffset ) ? healthBarOffset : Vector3.up;
         UpdateCanvasPosition(canvasObj, hs.transform.position, healthBarOffset);
 
         TMP_Text txt = canvasObj.GetComponentInChildren<TMP_Text>();
@@ -155,11 +161,13 @@ public class HealthBarManager : PoolingSystem
         }
     }
 
-    public void RegisterHealthSystems(HealthSystem hs)
+    public void RegisterHealthSystems(HealthSystem hs, Vector3 offset, float showAtDistance)
     {
         if (hs)
         {
             _registeredHealthSystems.Add(hs);
+            _healthBarOffset[hs]  = offset;
+            _showAtDistance[hs] = showAtDistance;
             //Debug.Log($"[HealthBarManager] Registered health system {hs.gameObject.name}");
         }
     }
@@ -169,6 +177,8 @@ public class HealthBarManager : PoolingSystem
         if (!hs) return;
 
         _registeredHealthSystems.Remove(hs);
+        _healthBarOffset.Remove(hs);
+        _showAtDistance.Remove(hs);
 
         if(_activeCanvases.ContainsKey(hs))
         {

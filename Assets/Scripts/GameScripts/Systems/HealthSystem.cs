@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 public class HealthSystem : MonoBehaviour, IDamageable
 {
@@ -7,7 +8,11 @@ public class HealthSystem : MonoBehaviour, IDamageable
     [SerializeField] private int damagePerHit;
     [SerializeField] private LayerMask damageLayer;
     [SerializeField] private bool spawningRequired;
-
+    
+    [Header("Health Bar Settings")]
+    [SerializeField] private Vector3 healthBarOffset;
+    [SerializeField] private float showAtDistance;
+    
     private int _currentHealth;
 
     private SpawningSystem _spawner;
@@ -18,7 +23,7 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
         if (HealthBarManager.Instance)
         {
-            HealthBarManager.Instance.RegisterHealthSystems(this);
+            HealthBarManager.Instance.RegisterHealthSystems(this, healthBarOffset, showAtDistance);
             HealthBarManager.Instance.UpdateHealthText(this, _currentHealth);
         }
     }
@@ -47,22 +52,12 @@ public class HealthSystem : MonoBehaviour, IDamageable
     private void InitializeStart()
     {
         if(!spawningRequired) return;
-        
+        _spawner = GetComponentInParent<SpawningSystem>();
         if (!_spawner)
         {
-            _spawner = GetComponentInParent<SpawningSystem>();
-            if (_spawner)
-            {
 #if UNITY_EDITOR
-                Debug.Log($"Spawn manager found!");
+            Debug.LogError($"Spawn manager is missing!");
 #endif
-            }
-            else
-            {
-#if UNITY_EDITOR
-                Debug.LogError($"Spawn manager is missing!");
-#endif
-            }
         }
     }
 
@@ -87,7 +82,7 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
         _currentHealth = Mathf.Max(0, _currentHealth - damage);
 
-        HealthBarManager.Instance.UpdateHealthText(this, GetCurrentHealth());
+        HealthBarManager.Instance?.UpdateHealthText(this, GetCurrentHealth());
         
         if (_currentHealth <= 0)
         {
@@ -107,13 +102,6 @@ public class HealthSystem : MonoBehaviour, IDamageable
 
     private void Die()
     {
-        if (HealthBarManager.Instance)
-        {
-            HealthBarManager.Instance.UnregisterHealthSystems(this);
-        }
-
-        _currentHealth = maxHealth;
-
         if (spawningRequired)
         {
             _spawner?.ReturnObjectToPool(gameObject);

@@ -4,9 +4,11 @@ using TMPro;
 
 public class UIManager : MonoBehaviour
 {
+    [Header("Warning Panel Settings")]
     [SerializeField] private GameObject warningPanel;
     [SerializeField] private TMP_InputField playerNameField;
-
+    
+    
     private void Awake()
     {
         DisableWarning();
@@ -14,45 +16,41 @@ public class UIManager : MonoBehaviour
 
     private void Start()
     {
-        if(DataManager.Instance != null)
+        if(DataManager.Instance)
         {
-            playerName = DataManager.Instance.playerName;
+            PlayerName = DataManager.Instance.playerName;
         }
         else
         {
+#if UNITY_EDITOR
             Debug.Log("Data Manager is null.");
+#endif
         }
     }
 
-    public string playerName
+    private string PlayerName
     {
-        get
-        {
-            return playerNameField.text;
-        }
-        private set
-        {
-            playerNameField.text = value;
-        }
+        get => playerNameField.text;
+        set => playerNameField.text = value;
     }
 
-    private bool HasInvalidName(string input)
+    private static bool HasInvalidName(string input)
     {
-        bool hasNumber = Regex.IsMatch(input, @"\d");
-        bool hasCharacter = Regex.IsMatch(input, @"[^a-zA-Z\s]");
+        var hasNumber = Regex.IsMatch(input, @"\d");
+        var hasCharacter = Regex.IsMatch(input, @"[^a-zA-Z\s]");
 
         return hasNumber || hasCharacter;
     }
 
     public void StartClicked()
     {
-        if(playerName == string.Empty || HasInvalidName(playerName))
+        if(PlayerName == string.Empty || HasInvalidName(PlayerName))
         {
-            warningPanel.SetActive(true);
+            warningPanel?.SetActive(true);
             return;
         }
 
-        DataManager.Instance.playerName = playerName;
+        DataManager.Instance.playerName = PlayerName;
         SceneController.LoadGame();
     }
 
@@ -65,15 +63,18 @@ public class UIManager : MonoBehaviour
     {
         SceneController.QuitGame();
     }
-
+    
     public void DisableWarning()
     {
-        if (warningPanel != null)
+        if (warningPanel)
         {
             warningPanel.SetActive(false);
         }
-
         else
+        {
+#if UNITY_EDITOR
             Debug.Log("Warning Panel is null.");
+#endif
+        }
     }
 }

@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 6960850588737744047}
   - component: {fileID: -8040935524958457358}
   - component: {fileID: 3800723685397075061}
-  m_Layer: 3
+  m_Layer: 8
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -180,3 +180,5 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   spawningRequired: 0
+  healthBarOffset: {x: 0, y: 4, z: 0}
+  showAtDistance: 50
