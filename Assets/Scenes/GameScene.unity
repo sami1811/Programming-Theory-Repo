@@ -152,6 +152,7 @@ Transform:
   - {fileID: 888408781}
   - {fileID: 1821436648}
   - {fileID: 1677476014}
+  - {fileID: 1415666504}
   - {fileID: 552324791}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2114,6 +2115,60 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1211499037}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1415666503
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1415666504}
+  - component: {fileID: 1415666505}
+  m_Layer: 0
+  m_Name: UpgradeManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1415666504
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1415666503}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 21769411}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1415666505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1415666503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7de96dbdb6ccdea4f9feb1330bcc5605, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeManager
+  availableUpgrades:
+  - {fileID: 11400000, guid: 8476aaae726646943bbd9d72b958590e, type: 2}
+  - {fileID: 11400000, guid: 890303e39ed63a047ae87dec417c9d07, type: 2}
+  - {fileID: 11400000, guid: efc5fdf1eabbb2d4b840cc52a550c6af, type: 2}
+  - {fileID: 11400000, guid: 3e7d58e484df65948985b87643e56915, type: 2}
+  maxEffectMultiplier: 7
+  showMaxedUpgrades: 0
+  onUpgradeApplied:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1479233199
 GameObject:
   m_ObjectHideFlags: 0
@@ -3873,14 +3928,6 @@ PrefabInstance:
     - target: {fileID: 5687258901462145879, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
       propertyPath: m_Name
       value: Player
-      objectReference: {fileID: 0}
-    - target: {fileID: 6318271158895126242, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
-      propertyPath: xBound
-      value: 26
-      objectReference: {fileID: 0}
-    - target: {fileID: 6318271158895126242, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
-      propertyPath: zBound
-      value: 21
       objectReference: {fileID: 0}
     - target: {fileID: 6318271158895126242, guid: 86d3b211d7d56b34bad9f2efedcb29ce, type: 3}
       propertyPath: playerCamera

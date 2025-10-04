@@ -14,7 +14,9 @@ public class HealthSystem : MonoBehaviour, IDamageable
     [SerializeField] private float showAtDistance;
     
     private int _currentHealth;
-
+    public int CurrentHealth => _currentHealth;
+    public int DamagePerHit => damagePerHit;
+    
     private SpawningSystem _spawner;
 
     private void OnEnable()

@@ -113,7 +113,7 @@ public class SpawningSystem : MonoBehaviour
         _currentMaxEnemies = startingObjectCount;
         
 #if UNITY_EDITOR
-        Debug.Log($"[SpawningSystem] Starting progressive spawn system. Initial enemies: {startingObjectCount}, Max: {_maxSimultaneousEnemies}");
+        //Debug.Log($"[SpawningSystem] Starting progressive spawn system. Initial enemies: {startingObjectCount}, Max: {_maxSimultaneousEnemies}");
 #endif
         
         _spawnCoroutine = StartCoroutine(SpawnRoutine());
@@ -188,8 +188,8 @@ public class SpawningSystem : MonoBehaviour
                     _currentSpawnDelay = Mathf.Max(minSpawnDelay, _currentSpawnDelay * spawnAcceleration);
                     
 #if UNITY_EDITOR
-                    Debug.Log($"[SpawningSystem] Spawned enemy. Active: {currentActive + 1}/{_currentMaxEnemies} | " +
-                              $"Delay: {_currentSpawnDelay:F2}s | Pool: {_poolingSystem.ActiveObjectCount()}/{_poolingSystem.TotalObjectCount()}");
+//                    Debug.Log($"[SpawningSystem] Spawned enemy. Active: {currentActive + 1}/{_currentMaxEnemies} | " +
+     //                         $"Delay: {_currentSpawnDelay:F2}s | Pool: {_poolingSystem.ActiveObjectCount()}/{_poolingSystem.TotalObjectCount()}");
 #endif
                 }
                 else
@@ -207,7 +207,7 @@ public class SpawningSystem : MonoBehaviour
                     _currentMaxEnemies = Mathf.Min(_currentMaxEnemies + 1, _maxSimultaneousEnemies);
                     
 #if UNITY_EDITOR
-                    Debug.Log($"[SpawningSystem] Increased max enemies to: {_currentMaxEnemies}/{_maxSimultaneousEnemies}");
+//                    Debug.Log($"[SpawningSystem] Increased max enemies to: {_currentMaxEnemies}/{_maxSimultaneousEnemies}");
 #endif
                 }
                 else

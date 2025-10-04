@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -18,9 +20,12 @@ public class UpgradeUIManager : MonoBehaviour
     [Header("Game Manager Object")]
     [SerializeField] private GameManager gameManager;
 
-    // Placeholder upgrade data (will be replaced with actual UpgradeData later)
-    private string _selectedOption1Name;
-    private string _selectedOption2Name;
+    // Current upgrade options (using actual UpgradeData)
+    private UpgradeData _selectedOption1;
+    private UpgradeData _selectedOption2;
+    
+    // Cached StringBuilder for text formatting (zero allocation)
+    private StringBuilder _stringBuilder = new StringBuilder(32);
     
     private void Awake()
     {
@@ -61,7 +66,7 @@ public class UpgradeUIManager : MonoBehaviour
         if (!upgradePercentage)
         {
 #if UNITY_EDITOR
-            Debug.LogError("[Collectable Manager]Assign upgrade percentage text!");
+            Debug.LogError("[UpgradeUIManager] Assign upgrade percentage text!");
 #endif
         }
     }
@@ -83,6 +88,13 @@ public class UpgradeUIManager : MonoBehaviour
             Debug.LogError("[UpgradeUIManager] CollectableManager instance not found!");
 #endif
         }
+        
+        if (!UpgradeManager.Instance)
+        {
+#if UNITY_EDITOR
+            Debug.LogError("[UpgradeUIManager] UpgradeManager instance not found!");
+#endif
+        }
     }
 
     private void OnDestroy()
@@ -98,13 +110,42 @@ public class UpgradeUIManager : MonoBehaviour
         
         if (upgradeOption2Button)
             upgradeOption2Button.onClick.RemoveListener(OnOptionTwoSelected);
+        
+        // Clear cached data
+        _selectedOption1 = null;
+        _selectedOption2 = null;
+        _stringBuilder.Clear();
     }
     
+    /// <summary>
+    /// Called when threshold is reached - gets real upgrade options from UpgradeManager
+    /// </summary>
     public void ShowUpgradeOptions()
     {
-        GeneratePlaceholderUpgrades();
-        UpdateUpgradeUI();
+        if (!UpgradeManager.Instance)
+        {
+#if UNITY_EDITOR
+            Debug.LogError("[UpgradeUIManager] UpgradeManager not available!");
+#endif
+            return;
+        }
+
+        // Get random upgrades from UpgradeManager (uses cached list, no allocation)
+        List<UpgradeData> upgrades = UpgradeManager.Instance.GetRandomUpgrades();
         
+        if (upgrades.Count == 0)
+        {
+#if UNITY_EDITOR
+            Debug.LogWarning("[UpgradeUIManager] No upgrades available!");
+#endif
+            return;
+        }
+
+        // Store selected upgrades
+        _selectedOption1 = upgrades[0];
+        _selectedOption2 = upgrades.Count > 1 ? upgrades[1] : null;
+
+        UpdateUpgradeUI();
         gameManager?.EnableUpgradeSelection();
 
 #if UNITY_EDITOR
@@ -112,76 +153,104 @@ public class UpgradeUIManager : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    /// Updates UI progress text (optimized with StringBuilder)
+    /// </summary>
     public void OnPointsChange()
     {
-        if (CollectableManager.Instance)
-        {
-            upgradePercentage.text = $"Upgrade {CollectableManager.Instance.GetProgressPercentage()}/100";
-        }
-    }
-    
-    private void GeneratePlaceholderUpgrades()
-    {
-        // Placeholder upgrade names (will be replaced with actual UpgradeData)
-        string[] placeholderUpgrades = new string[]
-        {
-            "Increase Fire Rate",
-            "Health Regeneration",
-            "Movement Speed Boost",
-            "Damage Increase",
-            "Shield Protection",
-            "Critical Hit Chance"
-        };
+        if (!CollectableManager.Instance || !upgradePercentage) 
+            return;
 
-        // Select two random upgrades (ensuring they are different)
-        int index1 = Random.Range(0, placeholderUpgrades.Length);
-        int index2 = Random.Range(0, placeholderUpgrades.Length);
+        _stringBuilder.Clear();
+        _stringBuilder.Append("Upgrade ");
+        _stringBuilder.Append(CollectableManager.Instance.GetProgressPercentage().ToString("F0"));
+        _stringBuilder.Append("/100");
         
-        // Ensure different options
-        while (index2 == index1)
-        {
-            index2 = Random.Range(0, placeholderUpgrades.Length);
-        }
-
-        _selectedOption1Name = placeholderUpgrades[index1];
-        _selectedOption2Name = placeholderUpgrades[index2];
+        upgradePercentage.text = _stringBuilder.ToString();
     }
     
+    /// <summary>
+    /// Updates the UI with current upgrade options
+    /// </summary>
     private void UpdateUpgradeUI()
     {
         // Update Option 1
-        if (option1NameText)
-            option1NameText.text = _selectedOption1Name;
+        if (option1NameText && _selectedOption1 != null)
+        {
+            option1NameText.text = _selectedOption1.upgradeName;
+        }
 
         // Update Option 2
-        if (option2NameText)
-            option2NameText.text = _selectedOption2Name;
+        if (option2NameText && _selectedOption2 != null)
+        {
+            option2NameText.text = _selectedOption2.upgradeName;
+        }
+        else if (option2NameText)
+        {
+            // Hide second option if not available
+            option2NameText.text = "N/A";
+            if (upgradeOption2Button)
+                upgradeOption2Button.interactable = false;
+        }
     }
     
+    /// <summary>
+    /// Called when player selects the first upgrade option
+    /// </summary>
     private void OnOptionOneSelected()
     {
-        Debug.Log($"[UpgradeUIManager] Player selected: {_selectedOption1Name}");
+        if (_selectedOption1 == null)
+        {
+#if UNITY_EDITOR
+            Debug.LogError("[UpgradeUIManager] Option 1 is null!");
+#endif
+            return;
+        }
+
+#if UNITY_EDITOR
+        Debug.Log($"[UpgradeUIManager] Player selected: {_selectedOption1.upgradeName}");
+#endif
         
-        // TODO: Apply upgrade to player via UpgradeSystem
-        // UpgradeSystem.Instance.ApplyUpgrade(selectedUpgrade1);
+        // Apply upgrade through UpgradeManager
+        UpgradeManager.Instance?.ApplyUpgrade(_selectedOption1);
 
         CollectableManager.Instance?.ResetPoints();
         CloseUpgradePanel();
     }
     
+    /// <summary>
+    /// Called when player selects the second upgrade option
+    /// </summary>
     private void OnOptionTwoSelected()
     {
-        Debug.Log($"[UpgradeUIManager] Player selected: {_selectedOption2Name}");
+        if (_selectedOption2 == null)
+        {
+#if UNITY_EDITOR
+            Debug.LogError("[UpgradeUIManager] Option 2 is null!");
+#endif
+            return;
+        }
+
+#if UNITY_EDITOR
+        Debug.Log($"[UpgradeUIManager] Player selected: {_selectedOption2.upgradeName}");
+#endif
         
-        // TODO: Apply upgrade to player via UpgradeSystem
-        // UpgradeSystem.Instance.ApplyUpgrade(selectedUpgrade2);
+        // Apply upgrade through UpgradeManager
+        UpgradeManager.Instance?.ApplyUpgrade(_selectedOption2);
 
         CollectableManager.Instance?.ResetPoints();
         CloseUpgradePanel();
     }
     
+    /// <summary>
+    /// Closes the upgrade panel
+    /// </summary>
     private void CloseUpgradePanel()
     {
+        // Re-enable button 2 in case it was disabled
+        if (upgradeOption2Button)
+            upgradeOption2Button.interactable = true;
+
         gameManager?.DisableUpgradeSelection();
     }
 }

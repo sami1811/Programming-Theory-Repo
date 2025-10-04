@@ -4,6 +4,7 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Player Settings")]
     [SerializeField] private float moveSpeed;
+    [SerializeField] private float fireRate;
     [SerializeField] private Camera playerCamera;
     [SerializeField] private LayerMask groundLayer = 1;
 
@@ -23,6 +24,9 @@ public class PlayerController : MonoBehaviour
     private float _initialDistance;
     private bool _initialized;
     private Quaternion _initialCameraRotation;
+    
+    public float MoveSpeed => moveSpeed;
+    public float FireRate => fireRate;
     
     private void Awake()
     {
