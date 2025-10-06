@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 6895053980787364474}
   - component: {fileID: 6722205938485135179}
   - component: {fileID: 3475553167952075726}
-  - component: {fileID: -952002210980147740}
   m_Layer: 6
   m_Name: Enemy
   m_TagString: Untagged
@@ -134,8 +133,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   spawningRequired: 1
+  increaseHealthOverTime: 1
   healthBarOffset: {x: 0, y: 2, z: 0}
   showAtDistance: 4
+  playerStats: {fileID: 0}
+  regenInterval: 0
+  totalRegenDuration: 0
+  regenAmountPerTick: 0
 --- !u!114 &3475553167952075726
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,22 +152,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59f2060d6d2a01a42ab08c76b833108c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyController
---- !u!114 &-952002210980147740
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7646923829586002145}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c00a72defd8bae243871ab0e6680c850, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
-  useFireRate: 0
-  useHealthRegen: 0
-  useMovementSpeed: 0
-  useDamage: 1
-  onStatUpdated:
-    m_PersistentCalls:
-      m_Calls: []

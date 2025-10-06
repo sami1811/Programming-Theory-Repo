@@ -103,7 +103,6 @@ GameObject:
   - component: {fileID: 1331429410495104924}
   - component: {fileID: 7029264055041015264}
   - component: {fileID: 6014943851521324356}
-  - component: {fileID: -1599458299638149020}
   m_Layer: 7
   m_Name: Tree
   m_TagString: Untagged
@@ -224,8 +223,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   spawningRequired: 1
+  increaseHealthOverTime: 0
   healthBarOffset: {x: 0, y: 4, z: 0}
   showAtDistance: 4
+  playerStats: {fileID: 0}
+  regenInterval: 0
+  totalRegenDuration: 0
+  regenAmountPerTick: 0
 --- !u!114 &6014943851521324356
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -240,22 +244,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Collectable
   pointsValue: 50
   healthSystem: {fileID: 7029264055041015264}
---- !u!114 &-1599458299638149020
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4985764532660486543}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c00a72defd8bae243871ab0e6680c850, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
-  useFireRate: 0
-  useHealthRegen: 1
-  useMovementSpeed: 0
-  useDamage: 0
-  onStatUpdated:
-    m_PersistentCalls:
-      m_Calls: []

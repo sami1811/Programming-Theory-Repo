@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 public class HealthSystem : MonoBehaviour, IDamageable
@@ -8,17 +9,21 @@ public class HealthSystem : MonoBehaviour, IDamageable
     [SerializeField] private int damagePerHit;
     [SerializeField] private LayerMask damageLayer;
     [SerializeField] private bool spawningRequired;
+    [SerializeField] private bool increaseHealthOverTime;
     
     [Header("Health Bar Settings")]
     [SerializeField] private Vector3 healthBarOffset;
     [SerializeField] private float showAtDistance;
     
     private int _currentHealth;
+    private const float HealthMultiplier = 0.02f;
+    
     public int CurrentHealth => _currentHealth;
     public int DamagePerHit => damagePerHit;
+    public int MaxHealth => maxHealth;
     
     private SpawningSystem _spawner;
-
+    
     private void OnEnable()
     {
         _currentHealth = maxHealth;
@@ -50,7 +55,7 @@ public class HealthSystem : MonoBehaviour, IDamageable
     {
         InitializeStart();
     }
-
+    
     private void InitializeStart()
     {
         if(!spawningRequired) return;
@@ -107,6 +112,12 @@ public class HealthSystem : MonoBehaviour, IDamageable
         if (spawningRequired)
         {
             _spawner?.ReturnObjectToPool(gameObject);
+            
+            if (increaseHealthOverTime)
+            {
+                const float temp = HealthMultiplier * 100f;
+                maxHealth += (int) temp;
+            }
         }
     }
 }
