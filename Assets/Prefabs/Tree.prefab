@@ -217,19 +217,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 598bdc7beec4d594c90c5cbb03d7def9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealthSystem
-  maxHealth: 25
-  damagePerHit: 1
   damageLayer:
     serializedVersion: 2
     m_Bits: 8
   spawningRequired: 1
+  isEnemy: 0
   increaseHealthOverTime: 0
-  healthBarOffset: {x: 0, y: 4, z: 0}
+  baseEnemyHealth: 0
+  isTree: 1
+  treeHealth: 25
   showAtDistance: 4
-  playerStats: {fileID: 0}
-  regenInterval: 0
-  totalRegenDuration: 0
-  regenAmountPerTick: 0
+  healthBarOffset: {x: 0, y: 4, z: 0}
 --- !u!114 &6014943851521324356
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -242,5 +240,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ddecad015855a17448361544aee1ea7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Collectable
-  pointsValue: 50
+  pointsValue: 80
   healthSystem: {fileID: 7029264055041015264}

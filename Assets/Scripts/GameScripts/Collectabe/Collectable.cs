@@ -16,7 +16,8 @@ public class Collectable : MonoBehaviour
 
     private void OnDisable()
     {
-        if (!healthSystem) return;
+        if (!healthSystem)
+            return;
 
         if (!healthSystem.IsAlive())
         {

@@ -1,7 +1,7 @@
 public interface IDamageable
 {
-    void TakeDamage(int damageValue);
-    int GetCurrentHealth();
+    void TakeDamage(float damageValue);
+    float GetCurrentHealth();
     bool IsAlive();
 
 }

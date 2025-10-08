@@ -127,19 +127,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 598bdc7beec4d594c90c5cbb03d7def9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealthSystem
-  maxHealth: 10
-  damagePerHit: 3
   damageLayer:
     serializedVersion: 2
     m_Bits: 8
   spawningRequired: 1
+  isEnemy: 1
   increaseHealthOverTime: 1
-  healthBarOffset: {x: 0, y: 2, z: 0}
+  baseEnemyHealth: 10
+  isTree: 0
+  treeHealth: 0
   showAtDistance: 4
-  playerStats: {fileID: 0}
-  regenInterval: 0
-  totalRegenDuration: 0
-  regenAmountPerTick: 0
+  healthBarOffset: {x: 0, y: 2, z: 0}
 --- !u!114 &3475553167952075726
 MonoBehaviour:
   m_ObjectHideFlags: 0

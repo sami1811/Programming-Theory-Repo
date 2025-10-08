@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Text.RegularExpressions;
 using TMPro;
 
-public class UIManager : MonoBehaviour
+public class MainUIManager : MonoBehaviour
 {
     [Header("Warning Panel Settings")]
     [SerializeField] private GameObject warningPanel;

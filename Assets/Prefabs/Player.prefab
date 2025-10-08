@@ -49,7 +49,7 @@ GameObject:
   - component: {fileID: -5593411973319451955}
   m_Layer: 3
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -139,8 +139,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ccb205aa1e2305f458fa5fc7eaa07122, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControlller
-  moveSpeed: 7
-  fireRate: 0
+  playerRb: {fileID: 8848117716995978009}
   playerCamera: {fileID: 0}
   groundLayer:
     serializedVersion: 2
@@ -149,8 +148,10 @@ MonoBehaviour:
   zBound: 21
   playerMarkerObj: {fileID: 6818096446185233346}
   animationSpeed: 2
-  maxTiltAngle: -8
-  tiltDistance: 25
+  maxTiltAngleX: -8
+  maxTiltAngleY: 20
+  tiltDistanceX: 25
+  tiltDistanceY: 15
 --- !u!54 &8848117716995978009
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -161,7 +162,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}

@@ -196,11 +196,11 @@ public class HealthBarManager : PoolingSystem
         }
     }
 
-    public void UpdateHealthText(HealthSystem hs, int currentHealth)
+    public void UpdateHealthText(HealthSystem hs, float currentHealth)
     {
         if (hs && _healthText.TryGetValue(hs, out TMP_Text txt) && txt)
         {
-            txt.text = currentHealth.ToString();
+            txt.text = $"{currentHealth}";
         }
     }
 

@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -35,11 +34,9 @@ public class CollectableManager : MonoBehaviour
     {
         _currentPoints += points;
         onPointsChanged?.Invoke(_currentPoints);
-
-#if UNITY_EDITOR
-        Debug.Log($"Points added: {points}. Total: {_currentPoints}/{pointsThreshold}");
-#endif
-
+        
+        Logger($"Points added: {points}. Total: {_currentPoints}/{pointsThreshold}");
+        
         if (_currentPoints >= pointsThreshold)
         {
             TriggerUpgradeSelection();
@@ -48,10 +45,7 @@ public class CollectableManager : MonoBehaviour
 
     private void TriggerUpgradeSelection()
     {
-#if UNITY_EDITOR
-        Debug.Log($"Triggering upgrade selection");
-#endif
-        
+        Logger("Triggering upgrade selection");
         onThresholdReached?.Invoke();
     }
 
@@ -62,9 +56,7 @@ public class CollectableManager : MonoBehaviour
         if (useIncreasingThreshold)
         {
             pointsThreshold = Mathf.RoundToInt(pointsThreshold * thresholdMultiplier);
-#if UNITY_EDITOR
-            Debug.Log($"Threshold increased to: {pointsThreshold}");
-#endif
+            Logger($"Threshold increased to: {pointsThreshold}");
         }
         
         onPointsChanged?.Invoke(_currentPoints);
@@ -89,5 +81,12 @@ public class CollectableManager : MonoBehaviour
         _currentPoints = 0;
         pointsThreshold = 100;
         onPointsChanged?.Invoke(_currentPoints);
+    }
+    
+    private void Logger(string message)
+    {
+#if UNITY_EDITOR
+        Debug.Log($"[Collectable Manager] {message}");
+#endif
     }
 }

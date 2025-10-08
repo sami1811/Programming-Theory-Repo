@@ -2,42 +2,42 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+public static class SceneNames
+{
+    public const string MenuScene = "MainMenu";
+    public const string GameScene = "GameScene";
+    public const string LeaderboardScene = "LeaderboardScene";
+}
+
 public class SceneController : MonoBehaviour
 {
-    public static class SceneNames
-    {
-        public const string menuScene = "MainMenu";
-        public const string gameScene = "GameScene";
-        public const string leaderboardScene = "LeaderboardScene";
-    }
-
-    public static SceneController instance;
-
+    public static SceneController Instance  { get; private set; }
+    
     private void Awake()
     {
-        if(instance != null && instance != this)
+        if(Instance&& Instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
-        instance = this;
+        Instance = this;
         DontDestroyOnLoad(gameObject);
     }
 
     public static void LoadMainMenu()
     {
-        SceneManager.LoadScene(SceneNames.menuScene);
+        SceneManager.LoadScene(SceneNames.MenuScene);
     }
 
     public static void LoadGame()
     {
-        SceneManager.LoadScene(SceneNames.gameScene);
+        SceneManager.LoadScene(SceneNames.GameScene);
     }
 
     public static void LoadLeaderboard()
     {
-        SceneManager.LoadScene(SceneNames.leaderboardScene);
+        SceneManager.LoadScene(SceneNames.LeaderboardScene);
     }
 
     public static void QuitGame()

@@ -1,10 +1,11 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class PlayerController : MonoBehaviour
 {
+    [FormerlySerializedAs("playerStatsSystem")]
     [Header("Player Settings")]
-    [SerializeField] private float moveSpeed;
-    [SerializeField] private float fireRate;
+    [SerializeField] private Rigidbody playerRb;
     [SerializeField] private Camera playerCamera;
     [SerializeField] private LayerMask groundLayer = 1;
 
@@ -16,37 +17,44 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GameObject playerMarkerObj;
     [SerializeField] private float animationSpeed;
 
+    [FormerlySerializedAs("maxTiltAngle")]
     [Header("Camera Settings")]
-    [SerializeField] private float maxTiltAngle; // Maximum downward tilt
-    [SerializeField] private float tiltDistance; 
+    [SerializeField] private float maxTiltAngleX;
+    [SerializeField] private float maxTiltAngleY;
+    [FormerlySerializedAs("tiltDistance")]
+    [SerializeField] private float tiltDistanceX; 
+    [SerializeField] private float tiltDistanceY;
     
     private Camera _mainCamera;
-    private float _initialDistance;
+    private Vector3 _initialPlayerPosition;
+    private float _initialDistanceX;
     private bool _initialized;
     private Quaternion _initialCameraRotation;
-    
-    public float MoveSpeed => moveSpeed;
-    public float FireRate => fireRate;
     
     private void Awake()
     {
         InitializeAwake();
     }
-
-    private void Update()
+    
+    private void FixedUpdate()
     {
         MovePlayer();
         RotatePlayer();
-        AnimatePlayerMarker();
     }
 
     private void LateUpdate()
     {
+        AnimatePlayerMarker();
         MoveCamera();
     }
 
     private void InitializeAwake()
     {
+        if (!playerRb)
+        {
+            ErrorLogger("Player rigidbody not found!");
+        }
+        
         _mainCamera = Camera.main;
         
         // Store initial values once
@@ -54,7 +62,8 @@ public class PlayerController : MonoBehaviour
         {
             if (_mainCamera)
             {
-                _initialDistance = Vector3.Distance(transform.position, _mainCamera.transform.position);
+                _initialPlayerPosition = transform.position;
+                _initialDistanceX = Vector3.Distance(transform.position, _mainCamera.transform.position);
                 _initialCameraRotation = _mainCamera.transform.rotation;
             }
 
@@ -63,7 +72,7 @@ public class PlayerController : MonoBehaviour
         
         if (!playerMarkerObj)
         {
-            playerMarkerObj = GameObject.Find("PlayerMarker").GetComponent<GameObject>();
+            ErrorLogger("PlayerMarkerObj not found!");
         }
     }
 
@@ -71,14 +80,28 @@ public class PlayerController : MonoBehaviour
     {
         if (_mainCamera)
         {
-            float currentDistance = Vector3.Distance(transform.position, _mainCamera.transform.position);
-            float distanceTraveled = currentDistance - _initialDistance;
+            // Calculate forward/backward distance for X-axis tilt
+            float currentDistanceZ = Vector3.Distance(transform.position, _mainCamera.transform.position);
+            float distanceTraveledZ = currentDistanceZ - _initialDistanceX;
+            float tiltAngleX = Mathf.Clamp(distanceTraveledZ / tiltDistanceX, 0f, 1f) * maxTiltAngleX;
         
-            float tiltAngle = Mathf.Clamp(distanceTraveled / tiltDistance, 0f, 1f) * maxTiltAngle;
+            // Calculate sideways distance for Y-axis tilt
+            Vector3 cameraForward = _mainCamera.transform.forward;
+            cameraForward.y = 0; // Project to horizontal plane
+            Vector3 cameraRight = Vector3.Cross(Vector3.up, cameraForward).normalized;
+            
+            Vector3 currentOffset = transform.position - _initialPlayerPosition;
         
-            // Add tilt to the initial rotation
+            float sidewaysDistance = Vector3.Dot(currentOffset, cameraRight);
+            float tiltAngleY = Mathf.Clamp(sidewaysDistance / tiltDistanceY, -1f, 1f) * maxTiltAngleY;
+        
+            // Apply both tilts to initial rotation
             Vector3 initialEuler = _initialCameraRotation.eulerAngles;
-            _mainCamera.transform.rotation = Quaternion.Euler(initialEuler.x + tiltAngle, initialEuler.y, initialEuler.z);
+            _mainCamera.transform.rotation = Quaternion.Euler(
+                initialEuler.x + tiltAngleX, 
+                initialEuler.y + tiltAngleY, 
+                initialEuler.z
+            );
         }
     }
     
@@ -90,17 +113,17 @@ public class PlayerController : MonoBehaviour
         float vertical = Input.GetAxis("Vertical");
 
         Vector3 direction = transform.forward * vertical + transform.right * horizontal;
-        Vector3 velocity = direction * (moveSpeed * Time.deltaTime);
+        Vector3 velocity = direction * (StatsSystem.Instance.MovementSpeed * Time.deltaTime);
 
         playerPos += velocity;
 
         playerPos = new Vector3(
             Mathf.Clamp(playerPos.x, -xBound, xBound),
-            transform.position.y,
+            Mathf.Clamp(transform.position.y, 1f, 5f),
             Mathf.Clamp(playerPos.z, -zBound, zBound)
             );
-
-        transform.position = playerPos;
+        
+        playerRb?.MovePosition(playerPos);
     }
 
     private void RotatePlayer()
@@ -127,5 +150,26 @@ public class PlayerController : MonoBehaviour
         float t = Mathf.PingPong(Time.time * animationSpeed, 1f);
         float animateY = Mathf.Lerp(1.5f, 2f, t);
         playerMarkerObj.transform.position = transform.position + new Vector3(0, animateY, 0);
+    }
+    
+    private void ErrorLogger(string message)
+    {
+#if UNITY_EDITOR
+        Debug.LogError($"[Payer Controller] {message}");
+#endif
+    }
+    
+    private void Logger(string message)
+    {
+#if UNITY_EDITOR
+        Debug.Log($"[Payer Controller] {message}");
+#endif
+    }
+    
+    private void WarningLogger(string message)
+    {
+#if UNITY_EDITOR
+        Debug.LogWarning($"[Payer Controller] {message}");
+#endif
     }
 }
