@@ -8,7 +8,8 @@ public enum UpgradeType
     FireRate,
     HealthRegen,
     MovementSpeed,
-    Damage
+    Damage,
+    Points
 }
 
 /// <summary>

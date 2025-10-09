@@ -221,6 +221,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   spawningRequired: 1
+  shouldRegenHealth: 0
+  regenInterval: 0
+  regenAmountPerTick: 0
   isEnemy: 0
   increaseHealthOverTime: 0
   baseEnemyHealth: 0
@@ -240,5 +243,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ddecad015855a17448361544aee1ea7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Collectable
-  pointsValue: 80
+  pointsValue: 20
   healthSystem: {fileID: 7029264055041015264}

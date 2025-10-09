@@ -10,7 +10,6 @@ public class AbilityUIManager : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private Button upgradeOption1Button;
     [SerializeField] private Button upgradeOption2Button;
-    [SerializeField] private TMP_Text updatePoints;
     
     [Header("Option 1 UI Elements")]
     [SerializeField] private TMP_Text option1NameText;
@@ -24,9 +23,6 @@ public class AbilityUIManager : MonoBehaviour
     // Current upgrade options (using actual UpgradeData)
     private UpgradeData _selectedOption1;
     private UpgradeData _selectedOption2;
-    
-    // Cached StringBuilder for text formatting (zero allocation)
-    private StringBuilder _stringBuilder = new StringBuilder(32);
     
     private void Awake()
     {
@@ -56,11 +52,6 @@ public class AbilityUIManager : MonoBehaviour
         else
         {
             ErrorLogger("Option 2 button not found!");
-        }
-        
-        if (!updatePoints)
-        {
-            ErrorLogger("Percentage text not found!");
         }
     }
 
@@ -103,7 +94,6 @@ public class AbilityUIManager : MonoBehaviour
         // Clear cached data
         _selectedOption1 = null;
         _selectedOption2 = null;
-        _stringBuilder.Clear();
     }
     
     public void ShowUpgradeOptions()
@@ -131,19 +121,6 @@ public class AbilityUIManager : MonoBehaviour
         gameUIManager?.EnableAbilityPanel();
         
         Logger("Showing upgrade options");
-    }
-
-    public void OnPointsChange()
-    {
-        if (!CollectableManager.Instance || !updatePoints) 
-            return;
-
-        _stringBuilder.Clear();
-        _stringBuilder.Append("Upgrade ");
-        _stringBuilder.Append(CollectableManager.Instance.GetProgressPercentage().ToString("F0"));
-        _stringBuilder.Append("/100");
-        
-        updatePoints.text = _stringBuilder.ToString();
     }
     
     private void UpdateUpgradeUI()

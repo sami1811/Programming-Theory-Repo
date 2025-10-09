@@ -15,12 +15,15 @@ public class StatsSystem : MonoBehaviour
     [SerializeField] private bool useMovementSpeed;
     [Tooltip("Enable damage stat for this object")]
     [SerializeField] private bool useDamage;
+    [Tooltip("Enable points multiplier stat for this object")]
+    [SerializeField] private bool usePoints;
 
     [Header("Base Stat Values")]
     [SerializeField] private float baseFireRate;
     [SerializeField] private float baseHealthRegen;
     [SerializeField] private float baseMovementSpeed;
     [SerializeField] private float baseDamage;
+    [SerializeField] private float basePoints;
 
     [Header("Events")]
     [Tooltip("Invoked when any stat is updated")]
@@ -31,18 +34,21 @@ public class StatsSystem : MonoBehaviour
     private float _healthRegenMultiplier = 1f;
     private float _movementSpeedMultiplier = 1f;
     private float _damageMultiplier = 1f;
+    private float _pointsMultiplier = 1f;
 
     // Public properties to get final calculated stats
     public float FireRate => baseFireRate * _fireRateMultiplier;
     public float HealthRegen => baseHealthRegen * _healthRegenMultiplier;
     public float MovementSpeed => baseMovementSpeed * _movementSpeedMultiplier;
     public float Damage => baseDamage * _damageMultiplier;
-
+    public float Points => basePoints * _pointsMultiplier;
+    
     // Properties to check which stats are active
     public bool HasFireRate => useFireRate;
     public bool HasHealthRegen => useHealthRegen;
     public bool HasMovementSpeed => useMovementSpeed;
     public bool HasDamage => useDamage;
+    public bool HasPoints => usePoints;
 
     private void Awake()
     {
@@ -104,6 +110,9 @@ public class StatsSystem : MonoBehaviour
 
         if (useDamage)
             _damageMultiplier = AbilityManager.Instance.GetCurrentMultiplier(UpgradeType.Damage);
+        
+        if (usePoints)
+            _pointsMultiplier = AbilityManager.Instance.GetCurrentMultiplier(UpgradeType.Points);
 
 #if UNITY_EDITOR
         LogCurrentStats();
@@ -167,6 +176,17 @@ public class StatsSystem : MonoBehaviour
 #endif
                 }
                 break;
+            
+            case UpgradeType.Points:
+                if (usePoints)
+                {
+                    _pointsMultiplier = newMultiplier;
+                    statUpdated = true;
+#if UNITY_EDITOR
+                    Debug.Log($"[PlayerStats] {gameObject.name} Points updated: {Points:F2}");
+#endif
+                }
+                break;
         }
 
         // Invoke event if a stat was updated
@@ -191,6 +211,8 @@ public class StatsSystem : MonoBehaviour
                 return _movementSpeedMultiplier;
             case UpgradeType.Damage:
                 return _damageMultiplier;
+            case UpgradeType.Points:
+                return _pointsMultiplier;
             default:
                 return 1f;
         }
@@ -211,6 +233,8 @@ public class StatsSystem : MonoBehaviour
                 return baseMovementSpeed;
             case UpgradeType.Damage:
                 return baseDamage;
+            case UpgradeType.Points:
+                return basePoints;
             default:
                 return 0f;
         }
@@ -235,6 +259,9 @@ public class StatsSystem : MonoBehaviour
             case UpgradeType.Damage:
                 baseDamage = value;
                 break;
+            case UpgradeType.Points:
+                basePoints = value;
+                break;
         }
     }
 
@@ -247,6 +274,7 @@ public class StatsSystem : MonoBehaviour
         _healthRegenMultiplier = 1f;
         _movementSpeedMultiplier = 1f;
         _damageMultiplier = 1f;
+        _pointsMultiplier = 1f;
 
 #if UNITY_EDITOR
         Debug.Log($"[PlayerStats] {gameObject.name} multipliers reset");
@@ -268,6 +296,8 @@ public class StatsSystem : MonoBehaviour
             Debug.Log($"Movement Speed: {MovementSpeed:F2} (Base: {baseMovementSpeed} × {_movementSpeedMultiplier:F2})");
         if (useDamage)
             Debug.Log($"Damage: {Damage:F2} (Base: {baseDamage} × {_damageMultiplier:F2})");
+        if (usePoints)
+            Debug.Log($"Points: {Points:F2} (Base: {basePoints} × {_pointsMultiplier:F2})");
     }
 #endif
 }

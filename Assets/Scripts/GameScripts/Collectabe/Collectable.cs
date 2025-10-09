@@ -3,7 +3,6 @@ using UnityEngine;
 public class Collectable : MonoBehaviour
 {
     [Header("Collectable Settings")]
-    [SerializeField] private int pointsValue;
     [SerializeField] private HealthSystem healthSystem;
 
     private void OnEnable()
@@ -16,12 +15,12 @@ public class Collectable : MonoBehaviour
 
     private void OnDisable()
     {
-        if (!healthSystem)
+        if (!healthSystem || !StatsSystem.Instance)
             return;
 
         if (!healthSystem.IsAlive())
         {
-            CollectableManager.Instance?.AddPoints(pointsValue);
+            CollectableManager.Instance?.AddPoints(Mathf.FloorToInt(StatsSystem.Instance.Points));
         }
     }
 }

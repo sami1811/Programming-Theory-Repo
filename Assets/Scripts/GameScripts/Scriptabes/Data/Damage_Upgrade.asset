@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43e7ea9c2a1cd0b419835ff378178155, type: 3}
   m_Name: Damage_Upgrade
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeData
-  upgradeName: Increase Damage
+  upgradeName: All Damages +2
   upgradeType: 3
-  multiplier: 1.2
+  multiplier: 2
   description: Increases Damage by 20%
+  regenDuration: 0

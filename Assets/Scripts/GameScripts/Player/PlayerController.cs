@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -25,17 +26,34 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float tiltDistanceX; 
     [SerializeField] private float tiltDistanceY;
     
+    [Header("Gun Settings")]
+    [SerializeField] private Transform muzzle;
+    [SerializeField] private Quaternion bulletOffsetRotation;
+    
     private Camera _mainCamera;
     private Vector3 _initialPlayerPosition;
-    private float _initialDistanceX;
-    private bool _initialized;
     private Quaternion _initialCameraRotation;
+    
+    private float _initialDistanceX;
+    private float _fireInterval; // Time between shots (calculated from fireRate)
+    private float _nextFireTime; // When the next shot can be fired
+    
+    private bool _initialized;
     
     private void Awake()
     {
         InitializeAwake();
     }
-    
+
+    private void Update()
+    {
+        if (StatsSystem.Instance)
+        {
+            _fireInterval = 1f / StatsSystem.Instance.FireRate;
+            BulletFired();
+        }
+    }
+
     private void FixedUpdate()
     {
         MovePlayer();
@@ -73,6 +91,11 @@ public class PlayerController : MonoBehaviour
         if (!playerMarkerObj)
         {
             ErrorLogger("PlayerMarkerObj not found!");
+        }
+
+        if (!muzzle)
+        {
+            WarningLogger("Muzzle not found on the gun!");
         }
     }
 
@@ -125,7 +148,35 @@ public class PlayerController : MonoBehaviour
         
         playerRb?.MovePosition(playerPos);
     }
+    
+    void GetBullet()
+    {
+        GameObject bullet = BulletManager.Instance.GetObject();
+        
+        if (!ReferenceEquals(bullet, null) && bullet)
+        {
+            var bulletScript = bullet.GetComponent<Bullet>();
 
+            if (bulletScript)
+            {
+                bulletScript.Initialize(muzzle.position, muzzle.rotation, muzzle.right);
+            }
+            else
+            {
+                Debug.LogWarning("Bullet script not found on pooled object!");
+            }
+        }
+    }
+    
+    void BulletFired()
+    {
+        if (Input.GetKey(KeyCode.Mouse0) && Time.time >= _nextFireTime)
+        {
+            GetBullet();
+            _nextFireTime = Time.time + _fireInterval; // Schedule next shot
+        }
+    }
+    
     private void RotatePlayer()
     {
         Vector3 mouseScreenPosition = Input.mousePosition;

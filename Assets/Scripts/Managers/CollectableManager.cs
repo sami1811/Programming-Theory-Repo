@@ -7,6 +7,7 @@ public class CollectableManager : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private int pointsThreshold;
+    [SerializeField] private int maxThresholdPoints;
     [SerializeField] private bool useIncreasingThreshold;
     [SerializeField] private float thresholdMultiplier;
     
@@ -55,7 +56,18 @@ public class CollectableManager : MonoBehaviour
         
         if (useIncreasingThreshold)
         {
-            pointsThreshold = Mathf.RoundToInt(pointsThreshold * thresholdMultiplier);
+            var temp = Mathf.RoundToInt(pointsThreshold * thresholdMultiplier);
+
+            if (temp > maxThresholdPoints)
+            {
+                pointsThreshold = maxThresholdPoints;
+                useIncreasingThreshold = false;
+            }
+            else
+            {
+                pointsThreshold = temp;
+            }
+            
             Logger($"Threshold increased to: {pointsThreshold}");
         }
         

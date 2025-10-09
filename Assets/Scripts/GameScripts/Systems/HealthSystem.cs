@@ -6,6 +6,7 @@ public class HealthSystem : MonoBehaviour, IDamageable
     [FormerlySerializedAs("playerStatsSystem")]
     [Header("Other Settings")]
     [SerializeField] private LayerMask damageLayer;
+    [SerializeField] private LayerMask healthBarTriggerLayers;
     [SerializeField] private bool spawningRequired;
     
     [Header("Regeneration Settings")]
@@ -95,20 +96,7 @@ public class HealthSystem : MonoBehaviour, IDamageable
             _damagePerHit = Mathf.RoundToInt( StatsSystem.Instance.Damage);
         }
 
-        if (shouldRegenHealth && _isRegenActive && Time.time < _regenEndTime)
-        {
-            _regenTimer += Time.deltaTime;
-            if (_regenTimer >= regenInterval)
-            {
-                RegenerateHealth();
-                _regenTimer = 0f;
-            }
-        }
-        else if (_isRegenActive && Time.time >= _regenEndTime)
-        {
-            _isRegenActive = false;
-            shouldRegenHealth = false;
-        }
+        StartRegeneration();
     }
 
     private void RegenerateHealth()
@@ -123,6 +111,24 @@ public class HealthSystem : MonoBehaviour, IDamageable
         _currentHealth = Mathf.Min(_currentHealth + regenAmount, MaxHealth);
         
         HealthBarManager.Instance?.UpdateHealthText(this, _currentHealth);
+    }
+
+    private void StartRegeneration()
+    {
+        if (shouldRegenHealth && _isRegenActive && Time.time < _regenEndTime)
+        {
+            _regenTimer += Time.deltaTime;
+            if (_regenTimer >= regenInterval)
+            {
+                RegenerateHealth();
+                _regenTimer = 0f;
+            }
+        }
+        else if (_isRegenActive && Time.time >= _regenEndTime)
+        {
+            _isRegenActive = false;
+            shouldRegenHealth = false;
+        }
     }
     
     private void OnRegenUpgrade(UpgradeData upgrade, float multiplier)
@@ -201,11 +207,10 @@ public class HealthSystem : MonoBehaviour, IDamageable
                 _spawner?.ReturnObjectToPool(gameObject);
             }
         }
+
+        if (!increaseHealthOverTime) return;
         
-        if (increaseHealthOverTime)
-        {
-            const float temp = HealthMultiplier * 100f;
-            baseEnemyHealth += (int) temp;
-        }
+        const float temp = HealthMultiplier * 100f;
+        baseEnemyHealth += (int) temp;
     }
 }

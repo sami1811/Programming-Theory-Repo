@@ -18,6 +18,7 @@ public class AbilityManager : MonoBehaviour
     [SerializeField] private float maxHealthRegenMultiplier;
     [SerializeField] private float maxMovementSpeedMultiplier;
     [SerializeField] private float maxDamageMultiplier;
+    [SerializeField] private float maxPointsMultiplier;
 
     [Header("Pool Behavior")]
     [Tooltip("Keep showing maxed upgrades in selection?")]
@@ -184,6 +185,8 @@ public class AbilityManager : MonoBehaviour
                 return maxMovementSpeedMultiplier;
             case UpgradeType.Damage:
                 return maxDamageMultiplier;
+            case UpgradeType.Points:
+                return maxPointsMultiplier;
             default:
                 return 3f;
         }
