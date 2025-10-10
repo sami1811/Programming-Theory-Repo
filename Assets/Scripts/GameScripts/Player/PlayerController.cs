@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -28,7 +27,6 @@ public class PlayerController : MonoBehaviour
     
     [Header("Gun Settings")]
     [SerializeField] private Transform muzzle;
-    [SerializeField] private Quaternion bulletOffsetRotation;
     
     private Camera _mainCamera;
     private Vector3 _initialPlayerPosition;

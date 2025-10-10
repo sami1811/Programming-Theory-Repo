@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43e7ea9c2a1cd0b419835ff378178155, type: 3}
   m_Name: Points_Upgrade
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeData
-  upgradeName: Points x2.5
+  upgradeName: Points +60
   upgradeType: 4
   multiplier: 3
   description: Increases Points by x3

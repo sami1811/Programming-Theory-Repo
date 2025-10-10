@@ -22,7 +22,6 @@ public class EnemyController : MonoBehaviour
 
             _moveSpeed = Random.Range(MinMoveSpeed, MaxMoveSpeed);
             _targetObj = _enemyManager.targetObject;
-            Debug.Log($"[Enemy Controller] Target found!!!");
         }
     }
 

@@ -22,10 +22,11 @@ public class SpawningSystem : MonoBehaviour
 
     [FormerlySerializedAs("startingEnemyCount")]
     [Header("Progressive Spawn Settings")]
+    [SerializeField] private bool shouldAvoidObstacles;
     [SerializeField] private int startingObjectCount;
     [SerializeField] private float initialSpawnDelay;
     [SerializeField] private float minSpawnDelay;
-    [SerializeField] private float spawnAcceleration; // 5% faster each spawn
+    [SerializeField] private float spawnAcceleration;
     
     private int _maxSimultaneousEnemies; // Auto-assigned from pool's maxPoolSize
 
@@ -314,8 +315,11 @@ public class SpawningSystem : MonoBehaviour
         }
 
         // Check for obstacles (optional)
-        /*if (Physics.CheckSphere(pos, 0.5f, LayerMask.GetMask("Obstacles")))
-            return false;*/
+        if (shouldAvoidObstacles)
+        {
+            if (Physics.CheckSphere(pos, 0.5f, LayerMask.GetMask("Obstacles")))
+                return false;
+        }
 
         return true;
     }

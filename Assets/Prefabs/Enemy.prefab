@@ -129,7 +129,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HealthSystem
   damageLayer:
     serializedVersion: 2
-    m_Bits: 520
+    m_Bits: 1544
   spawningRequired: 1
   shouldRegenHealth: 0
   regenInterval: 0

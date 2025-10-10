@@ -6,7 +6,7 @@ public class HealthSystem : MonoBehaviour, IDamageable
     [FormerlySerializedAs("playerStatsSystem")]
     [Header("Other Settings")]
     [SerializeField] private LayerMask damageLayer;
-    [SerializeField] private LayerMask healthBarTriggerLayers;
+    //[SerializeField] private LayerMask healthBarTriggerLayers;
     [SerializeField] private bool spawningRequired;
     
     [Header("Regeneration Settings")]
