@@ -12,6 +12,8 @@ public class Bullet : MonoBehaviour
     
     private Transform _bulletTransform;
     private bool _hasHit;
+    
+    public float BulletSpeed => speed;
 
     void Awake()
     {

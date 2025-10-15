@@ -14,10 +14,9 @@ public class CollectableManager : MonoBehaviour
     [Header("Events")]
     [SerializeField] private UnityEvent<int> onPointsChanged;
     public UnityEvent onThresholdReached;
+
+    public int CurrentPoints { get; set; }
     
-    private int _currentPoints;
-    
-    public int CurrentPoints => _currentPoints;
     public int PointsThreshold => pointsThreshold;
     
     private void Awake()
@@ -33,12 +32,12 @@ public class CollectableManager : MonoBehaviour
 
     public void AddPoints(int points)
     {
-        _currentPoints += points;
-        onPointsChanged?.Invoke(_currentPoints);
+        CurrentPoints += points;
+        onPointsChanged?.Invoke(CurrentPoints);
         
-        Logger($"Points added: {points}. Total: {_currentPoints}/{pointsThreshold}");
+        Logger($"Points added: {points}. Total: {CurrentPoints}/{pointsThreshold}");
         
-        if (_currentPoints >= pointsThreshold)
+        if (CurrentPoints >= pointsThreshold)
         {
             TriggerUpgradeSelection();
         }
@@ -52,7 +51,7 @@ public class CollectableManager : MonoBehaviour
 
     public void ResetPoints()
     {
-        _currentPoints = 0;
+        CurrentPoints = 0;
         
         if (useIncreasingThreshold)
         {
@@ -71,28 +70,28 @@ public class CollectableManager : MonoBehaviour
             Logger($"Threshold increased to: {pointsThreshold}");
         }
         
-        onPointsChanged?.Invoke(_currentPoints);
+        onPointsChanged?.Invoke(CurrentPoints);
     }
 
     //Optional: Manually set points method
     public void SetPoints(int points)
     {
-        _currentPoints = points;
-        onPointsChanged?.Invoke(_currentPoints);
+        CurrentPoints = points;
+        onPointsChanged?.Invoke(CurrentPoints);
     }
 
     public float GetProgressPercentage()
     {
-        var percentage = 100 * ((float) _currentPoints /  pointsThreshold);
+        var percentage = 100 * ((float) CurrentPoints /  pointsThreshold);
         
         return Mathf.Round(Mathf.Min(percentage, 100f));
     }
     
     public void ResetManager()
     {
-        _currentPoints = 0;
+        CurrentPoints = 0;
         pointsThreshold = 100;
-        onPointsChanged?.Invoke(_currentPoints);
+        onPointsChanged?.Invoke(CurrentPoints);
     }
     
     private void Logger(string message)

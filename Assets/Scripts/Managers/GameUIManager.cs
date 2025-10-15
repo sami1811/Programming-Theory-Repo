@@ -24,13 +24,26 @@ public class GameUIManager : MonoBehaviour
     [Header("Healing Countdown Settings")]
     [SerializeField] private UpgradeData upgradeData;
     
+    [Header("Timer Settings")]
+    [SerializeField] private TMP_Text timerText;
+    [SerializeField] private GameObject cube;
+    
     private float _countDownTimer;
+    private float _elapsedStopwatchTimer;
     private bool _isCountingDown;
+    private bool _isCountingUp;
+    
+    private HealthSystem _cubeHealth;
     
     private readonly StringBuilder _stringBuilder = new StringBuilder(32);
     
     private void Awake()
     {
+        if (!cube)
+        {
+            WarningLogger("Assign Cube in inspector");
+        }
+        
         if (!abilityPanel)
         {
             ErrorLogger("Ability panel is not assigned!");
@@ -68,6 +81,9 @@ public class GameUIManager : MonoBehaviour
         OnMoveSpeedChange();
         OnFireRateChange();
         OnDamageChange();
+        
+        _cubeHealth =  cube.GetComponent<HealthSystem>();
+        Time.timeScale = 0f;
     }
     
     private void OnEnable()
@@ -100,6 +116,11 @@ public class GameUIManager : MonoBehaviour
 
     private void Update()
     {
+        if (_isCountingUp)
+        {
+            GameTime();
+        }
+        
         if (!_isCountingDown)
             return;
         
@@ -151,6 +172,26 @@ public class GameUIManager : MonoBehaviour
         UpdateCountdownUI();
     }
 
+    private void GameTime()
+    {
+        if (_cubeHealth.CurrentHealth <= 0)
+        {
+            _isCountingUp = false;
+        }
+        
+        if(!_isCountingUp) return;
+        
+        _elapsedStopwatchTimer += Time.deltaTime;
+        
+        var mins = Mathf.FloorToInt(_elapsedStopwatchTimer / 60);
+        var secs = Mathf.FloorToInt(_elapsedStopwatchTimer % 60);
+        
+        _stringBuilder.Clear();
+        _stringBuilder.Append($"{mins:00}:{secs:00}");
+        
+        timerText.text = _stringBuilder.ToString();
+    }
+    
     private void UpdateCountdownUI()
     {
         if(!healingCountdownText)
@@ -207,6 +248,11 @@ public class GameUIManager : MonoBehaviour
         if (!CollectableManager.Instance || !updatePoints) 
             return;
 
+        if (CollectableManager.Instance.CurrentPoints > CollectableManager.Instance.PointsThreshold)
+        {
+            CollectableManager.Instance.CurrentPoints = CollectableManager.Instance.PointsThreshold;
+        }
+        
         _stringBuilder.Clear();
         _stringBuilder.Append("Upgrade: ");
         _stringBuilder.Append(CollectableManager.Instance.CurrentPoints);
@@ -225,6 +271,8 @@ public class GameUIManager : MonoBehaviour
     {
         rulesPanel?.SetActive(false);
         menuButton?.SetActive(true);
+        _isCountingUp = true;
+        Time.timeScale = 1f;
     }
     
     public void EnableAbilityPanel()
@@ -241,6 +289,13 @@ public class GameUIManager : MonoBehaviour
     {
 #if UNITY_EDITOR
         Debug.LogError($"[GameUIManager] {message}");
+#endif
+    }
+    
+    private void WarningLogger(string message)
+    {
+#if UNITY_EDITOR
+        Debug.LogWarning($"[GameUIManager] {message}");
 #endif
     }
 }

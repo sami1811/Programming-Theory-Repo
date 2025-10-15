@@ -157,4 +157,4 @@ MonoBehaviour:
   bulletRigidbody: {fileID: 7872773969584996142}
   hitLayers:
     serializedVersion: 2
-    m_Bits: 448
+    m_Bits: 1472

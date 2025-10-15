@@ -18,7 +18,7 @@ public class MainUIManager : MonoBehaviour
     {
         if(DataManager.Instance)
         {
-            PlayerName = DataManager.Instance.playerName;
+            PlayerName = DataManager.Instance.PlayerName;
         }
         else
         {
@@ -50,7 +50,7 @@ public class MainUIManager : MonoBehaviour
             return;
         }
 
-        DataManager.Instance.playerName = PlayerName;
+        DataManager.Instance.PlayerName = PlayerName;
         SceneController.LoadGame();
     }
 

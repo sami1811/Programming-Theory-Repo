@@ -7,6 +7,7 @@ public class TurretController : MonoBehaviour
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private SphereCollider detectionCollider;
     [SerializeField] private float detectionRange;
+    [SerializeField] private float velocitySmoothingFactor; // 0-1, lower = smoother
     
     [Header("Cleanup Settings")]
     [SerializeField] private float cleanupInterval;
@@ -21,10 +22,11 @@ public class TurretController : MonoBehaviour
     [SerializeField] private int predictionIterations;
     [SerializeField] private Transform muzzle; // Where bullets spawn
     
-    
     private Transform _currentTarget;
     private readonly List<Transform> _enemiesInRange = new List<Transform>();
-    private Dictionary<Transform, Vector3> _enemyLastPositions = new Dictionary<Transform, Vector3>();
+    private readonly Dictionary<Transform, Vector3> _enemyLastPositions = new Dictionary<Transform, Vector3>();
+    private readonly Dictionary<Transform, Vector3> _enemySmoothedVelocities = new Dictionary<Transform, Vector3>();
+    private readonly Dictionary<Transform, float> _enemyLastUpdateTime = new Dictionary<Transform, float>();
     
     private float _nextCleanupTime;
     private float _fireInterval; // Time between shots (calculated from fireRate)
@@ -41,6 +43,7 @@ public class TurretController : MonoBehaviour
         }
         
         detectionCollider.radius = detectionRange;
+        ValidateBulletSpeed();
     }
     
     private void OnTriggerEnter(Collider other)
@@ -64,6 +67,8 @@ public class TurretController : MonoBehaviour
     {
         _enemiesInRange.Remove(other.transform);
         _enemyLastPositions.Remove(other.transform);
+        _enemySmoothedVelocities.Remove(other.transform);
+        _enemyLastUpdateTime.Remove(other.transform);
     }
     
     private void Update()
@@ -101,56 +106,152 @@ public class TurretController : MonoBehaviour
     {
         if (!target)
             return Vector3.zero;
-    
+
         // Get enemy's velocity
         var targetVelocity = GetTargetVelocity(target);
-    
+
         // If target isn't moving much, no need to predict
         if (targetVelocity.sqrMagnitude < 0.1f)
         {
             return target.position;
         }
+
+        // Calculate intercept point
+        var toTarget = target.position - muzzle.position;
+        var a = targetVelocity.sqrMagnitude - (bulletSpeed * bulletSpeed);
+        var b = 2f * Vector3.Dot(targetVelocity, toTarget);
+        var c = toTarget.sqrMagnitude;
+
+        // Solve quadratic equation
+        var discriminant = b * b - 4f * a * c;
+
+        // If no solution, use iterative method as fallback
+        if (discriminant < 0 || Mathf.Approximately(a, 0f))
+        {
+            return PredictTargetPositionIterative(target, targetVelocity);
+        }
+
+        var t1 = (-b + Mathf.Sqrt(discriminant)) / (2f * a);
+        var t2 = (-b - Mathf.Sqrt(discriminant)) / (2f * a);
+
+        // Use the smallest positive time
+        var timeToImpact = Mathf.Min(t1, t2);
+        
+        if (timeToImpact < 0)
+        {
+            timeToImpact = Mathf.Max(t1, t2);
+        }
+
+        // If still negative, use iterative method
+        if (timeToImpact < 0)
+        {
+            return PredictTargetPositionIterative(target, targetVelocity);
+        }
+
+        // Calculate predicted position
+        var predictedPosition = target.position + (targetVelocity * timeToImpact);
+
+        return predictedPosition;
+    }
     
+    private Vector3 PredictTargetPositionIterative(Transform target, Vector3 targetVelocity)
+    {
         var predictedPosition = target.position;
-    
-        // Iterate to refine prediction
+
         for (var i = 0; i < predictionIterations; i++)
         {
-            // Calculate time for bullet to reach predicted position
             var distance = Vector3.Distance(muzzle.position, predictedPosition);
             var timeToImpact = distance / bulletSpeed;
-        
-            // Predict where target will be at that time
             predictedPosition = target.position + (targetVelocity * timeToImpact);
         }
-    
+
         return predictedPosition;
     }
     
     private Vector3 GetTargetVelocity(Transform target)
     {
-        if (!_enemyLastPositions.ContainsKey(target))
+        var currentTime = Time.time;
+    
+        // First time seeing this enemy
+        if (!_enemyLastPositions.TryGetValue(target, out var lastPosition))
         {
             _enemyLastPositions[target] = target.position;
+            _enemySmoothedVelocities[target] = Vector3.zero;
+            _enemyLastUpdateTime[target] = currentTime;
             return Vector3.zero;
         }
     
-        // Calculate velocity from position change
-        var lastPosition = _enemyLastPositions[target];
-        var velocity = (target.position - lastPosition) / Time.deltaTime;
+        // Calculate actual velocity
+        var deltaTime = currentTime - _enemyLastUpdateTime[target];
     
-        // Update stored position for next frame
+        // Prevent division by zero
+        if (deltaTime < 0.0001f)
+        {
+            return _enemySmoothedVelocities[target];
+        }
+    
+        var instantVelocity = (target.position - lastPosition) / deltaTime;
+    
+        // Smooth the velocity using exponential moving average
+        var smoothedVelocity = Vector3.Lerp(
+            _enemySmoothedVelocities[target], 
+            instantVelocity, 
+            velocitySmoothingFactor
+        );
+    
+        // Update tracking data
         _enemyLastPositions[target] = target.position;
+        _enemySmoothedVelocities[target] = smoothedVelocity;
+        _enemyLastUpdateTime[target] = currentTime;
     
-        return velocity;
+        return smoothedVelocity;
     }
     
     void BulletFired(Transform target)
     {
+        // Check if target is still valid and alive
+        if (!target || !target.gameObject.activeInHierarchy)
+        {
+            _currentTarget = null;
+            return;
+        }
+    
         if (IsAimedAtTarget(target) && Time.time >= _nextFireTime)
         {
             GetBullet();
-            _nextFireTime = Time.time + _fireInterval; // Schedule next shot
+            _nextFireTime = Time.time + _fireInterval;
+        }
+    }
+    
+    private void ValidateBulletSpeed()
+    {
+        if (bulletSpeed <= 0)
+        {
+            Debug.LogError("Bullet speed must be greater than 0!", this);
+            bulletSpeed = 20f; // Fallback
+        }
+    
+        // Test bullet speed matches actual bullet
+        if (BulletManager.Instance)
+        {
+            var testBullet = BulletManager.Instance.GetObject();
+            if (testBullet)
+            {
+                var bulletScript = testBullet.GetComponentInChildren<Bullet>();
+                
+                if (bulletScript)
+                {
+                    var actualSpeed = bulletScript.BulletSpeed;
+                    
+                    if (Mathf.Abs(actualSpeed - bulletSpeed) > 0.1f)
+                    {
+#if UNITY_EDITOR
+                        Debug.LogWarning($"Turret bulletSpeed ({bulletSpeed}) doesn't match actual bullet speed ({actualSpeed})!");
+#endif
+                    }
+                }
+                BulletManager.Instance.ReturnToPool(testBullet);
+            }
         }
     }
     
@@ -197,8 +298,8 @@ public class TurretController : MonoBehaviour
     private void CleanupEnemyList()
     {
         var removedCount = _enemiesInRange.RemoveAll(enemy => !enemy || !enemy.gameObject.activeInHierarchy);
-    
-        // Clean up velocity tracking too
+
+        // Clean up all tracking dictionaries
         var keysToRemove = new List<Transform>();
         foreach (var key in _enemyLastPositions.Keys)
         {
@@ -207,11 +308,14 @@ public class TurretController : MonoBehaviour
                 keysToRemove.Add(key);
             }
         }
+    
         foreach (var key in keysToRemove)
         {
             _enemyLastPositions.Remove(key);
+            _enemySmoothedVelocities.Remove(key);
+            _enemyLastUpdateTime.Remove(key);
         }
-    
+
         if (removedCount > 0)
         {
             Logger($"Cleaned up {removedCount} invalid enemies");
@@ -288,20 +392,38 @@ public class TurretController : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
 
-        // Draw line to current target
         if (Application.isPlaying && _currentTarget)
         {
-            // Green if aimed, red if not
-            bool isAimed = IsAimedAtTarget(_currentTarget);
-            Gizmos.color = isAimed ? Color.green : Color.red;
-            Gizmos.DrawLine(turretHead.position, _currentTarget.position);
-            Gizmos.DrawWireSphere(_currentTarget.position, 0.5f);
+            // Draw enemy velocity vector
+            if (_enemySmoothedVelocities.TryGetValue(_currentTarget, out Vector3 velocity))
+            {
+                Gizmos.color = Color.blue;
+                Gizmos.DrawRay(_currentTarget.position, velocity);
+                Gizmos.DrawWireSphere(_currentTarget.position + velocity, 0.2f);
+            }
+        
+            // Draw predicted position
+            Vector3 predictedPos = PredictTargetPosition(_currentTarget);
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(predictedPos, 0.4f);
+        
+            // Draw firing line
+            Gizmos.color = IsAimedAtTarget(_currentTarget) ? Color.green : Color.red;
+            Gizmos.DrawLine(muzzle.position, predictedPos);
+        
+            // Draw actual enemy position
+            Gizmos.color = Color.white;
+            Gizmos.DrawWireSphere(_currentTarget.position, 0.3f);
+        
+            // Draw lead amount
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(_currentTarget.position, predictedPos);
         }
 
         // Draw all enemies in range
         if (Application.isPlaying)
         {
-            Gizmos.color = Color.cyan;
+            Gizmos.color = new Color(0, 1, 1, 0.3f);
             foreach (var enemy in _enemiesInRange)
             {
                 if (enemy && enemy != _currentTarget)
@@ -311,18 +433,26 @@ public class TurretController : MonoBehaviour
             }
         }
         
-        // Draw predicted position
-        if (Application.isPlaying && _currentTarget)
+        // Draw aim cone
+        if (turretHead)
         {
-            Vector3 predictedPos = PredictTargetPosition(_currentTarget);
+            Gizmos.color = new Color(1, 1, 0, 0.2f); // Transparent yellow
         
-            Gizmos.color = Color.magenta;
-            Gizmos.DrawWireSphere(predictedPos, 0.3f);
-            Gizmos.DrawLine(muzzle.position, predictedPos);
+            // Right edge of cone
+            Vector3 rightDir = Quaternion.Euler(0, aimThreshold, 0) * turretHead.forward;
+            Gizmos.DrawRay(turretHead.position, rightDir * detectionRange);
         
-            // Draw actual vs predicted
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawLine(_currentTarget.position, predictedPos);
+            // Left edge of cone
+            Vector3 leftDir = Quaternion.Euler(0, -aimThreshold, 0) * turretHead.forward;
+            Gizmos.DrawRay(turretHead.position, leftDir * detectionRange);
+        
+            // Draw arc (optional, looks cool!)
+            for (int i = 0; i <= 10; i++)
+            {
+                float angle = Mathf.Lerp(-aimThreshold, aimThreshold, i / 10f);
+                Vector3 dir = Quaternion.Euler(0, angle, 0) * turretHead.forward;
+                Gizmos.DrawRay(turretHead.position, dir * (detectionRange * 0.8f));
+            }
         }
     }
 

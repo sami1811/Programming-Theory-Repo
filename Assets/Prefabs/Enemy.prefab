@@ -129,7 +129,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HealthSystem
   damageLayer:
     serializedVersion: 2
-    m_Bits: 1544
+    m_Bits: 2568
   spawningRequired: 1
   shouldRegenHealth: 0
   regenInterval: 0
@@ -137,6 +137,8 @@ MonoBehaviour:
   isEnemy: 1
   increaseHealthOverTime: 1
   baseEnemyHealth: 10
+  sizeMultiplier: 1.025
+  maxEnemySize: {x: 2, y: 2, z: 2}
   isTree: 0
   treeHealth: 0
   showAtDistance: 4

@@ -18,6 +18,8 @@ public class HealthSystem : MonoBehaviour, IDamageable
     [SerializeField] private bool isEnemy;
     [SerializeField] private bool increaseHealthOverTime;
     [SerializeField] private float baseEnemyHealth;
+    [SerializeField] private float sizeMultiplier;
+    [SerializeField] private Vector3 maxEnemySize;
     
     [Header("Tree Health Settings")]
     [SerializeField] private bool isTree;
@@ -212,5 +214,12 @@ public class HealthSystem : MonoBehaviour, IDamageable
         
         const float temp = HealthMultiplier * 100f;
         baseEnemyHealth += (int) temp;
+
+        transform.localScale *= sizeMultiplier;
+        
+        if (transform.lossyScale.x > 2.5f)
+        {
+            transform.localScale = maxEnemySize;
+        }
     }
 }

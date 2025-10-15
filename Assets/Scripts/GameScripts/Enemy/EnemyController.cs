@@ -34,10 +34,10 @@ public class EnemyController : MonoBehaviour
     {
         if (_targetObj)
         {
-            Vector3 targetPos = _targetObj.transform.position;
-            Vector3 newPos = new Vector3(targetPos.x, transform.position.y, targetPos.z);
-            Vector3 newDir = (newPos - transform.position).normalized;
-            Vector3 moveTo = newDir * (_moveSpeed * Time.deltaTime);
+            var targetPos = _targetObj.transform.position;
+            var newPos = new Vector3(targetPos.x, transform.position.y, targetPos.z);
+            var newDir = (newPos - transform.position).normalized;
+            var moveTo = newDir * (_moveSpeed * Time.deltaTime);
 
             transform.position += moveTo;
         }
