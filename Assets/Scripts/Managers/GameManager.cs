@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -9,7 +8,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject cubeObject;
     
     private HealthSystem _cubeHealth;
-    private bool _isGameOver;
+    //private bool _isGameOver;
 
     private void Awake()
     {
@@ -34,7 +33,7 @@ public class GameManager : MonoBehaviour
             }
         }
         
-        _isGameOver = false;
+        //_isGameOver = false;
         _cubeHealth =  cubeObject?.GetComponent<HealthSystem>();
     }
 

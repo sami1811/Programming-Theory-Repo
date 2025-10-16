@@ -5410,7 +5410,7 @@ MonoBehaviour:
   startingObjectCount: 1
   initialSpawnDelay: 8
   minSpawnDelay: 0.1
-  spawnAcceleration: 0.965
+  spawnAcceleration: 0.04
 --- !u!1 &1822037105
 GameObject:
   m_ObjectHideFlags: 0

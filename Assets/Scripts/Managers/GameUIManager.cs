@@ -111,7 +111,7 @@ public class GameUIManager : MonoBehaviour
 
     private void Start()
     {
-        //playerIntro.text = "Hi " + DataManager.Instance.playerName; 
+        playerIntro.text = "Hi " + DataManager.Instance.PlayerName;
     }
 
     private void Update()
@@ -177,6 +177,12 @@ public class GameUIManager : MonoBehaviour
         if (_cubeHealth.CurrentHealth <= 0)
         {
             _isCountingUp = false;
+
+            if (DataManager.Instance)
+            {
+                DataManager.Instance.PlayerTime = _elapsedStopwatchTimer;
+                DataManager.Instance.SaveData();
+            }
         }
         
         if(!_isCountingUp) return;

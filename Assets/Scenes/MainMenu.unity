@@ -1400,7 +1400,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f0342732110f0a46bdad770441bcd24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DataDelivery
-  playerName: 
+  maxDataCount: 5
 --- !u!1 &577022138
 GameObject:
   m_ObjectHideFlags: 0
