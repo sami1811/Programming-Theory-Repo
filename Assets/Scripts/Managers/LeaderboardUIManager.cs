@@ -7,6 +7,7 @@ public class LeaderboardUIManager : MonoBehaviour
 {
     public static LeaderboardUIManager Instance {  get; private set; }
     
+    [Header("Leaderboard Settings")]
     public List<TMP_Text> rankTexts = new List<TMP_Text>();
     public List<TMP_Text> nameTexts = new List<TMP_Text>();
     public List<TMP_Text> scoreTexts = new List<TMP_Text>();

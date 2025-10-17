@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.IO;
 using TMPro;
 using System.Text;
 using UnityEngine;
@@ -28,14 +30,27 @@ public class GameUIManager : MonoBehaviour
     [SerializeField] private TMP_Text timerText;
     [SerializeField] private GameObject cube;
     
+    [Header("Game Over Settings")]
+    [SerializeField] private GameObject gameOverPanel;
+    
+    [Header("Resume Settings")]
+    [SerializeField] private GameObject menuPanel;
+    [SerializeField] private GameObject leaderboardPanel;
+    [SerializeField] private List<TMP_Text> rankTexts = new List<TMP_Text>();
+    [SerializeField] private List<TMP_Text> nameTexts = new List<TMP_Text>();
+    [SerializeField] private List<TMP_Text> scoreTexts = new List<TMP_Text>();
+    
     private float _countDownTimer;
     private float _elapsedStopwatchTimer;
     private bool _isCountingDown;
     private bool _isCountingUp;
+    private bool _isGameOver;
     
     private HealthSystem _cubeHealth;
     
     private readonly StringBuilder _stringBuilder = new StringBuilder(32);
+    
+    public bool IsGameOver => _isGameOver;
     
     private void Awake()
     {
@@ -82,7 +97,11 @@ public class GameUIManager : MonoBehaviour
         OnFireRateChange();
         OnDamageChange();
         
-        _cubeHealth =  cube.GetComponent<HealthSystem>();
+        _isGameOver =  false;
+        gameOverPanel?.SetActive(false);
+        menuPanel?.SetActive(false);
+        leaderboardPanel?.SetActive(false);
+        _cubeHealth =  cube?.GetComponent<HealthSystem>();
         Time.timeScale = 0f;
     }
     
@@ -116,6 +135,13 @@ public class GameUIManager : MonoBehaviour
 
     private void Update()
     {
+        if (_isGameOver)
+        {
+            gameOverPanel?.SetActive(true);
+            Time.timeScale = 0f;
+            return;
+        }
+        
         if (_isCountingUp)
         {
             GameTime();
@@ -176,6 +202,7 @@ public class GameUIManager : MonoBehaviour
     {
         if (_cubeHealth.CurrentHealth <= 0)
         {
+            _isGameOver = true;
             _isCountingUp = false;
 
             if (DataManager.Instance)
@@ -290,7 +317,95 @@ public class GameUIManager : MonoBehaviour
     {
         abilityPanel.SetActive(false);
     }
+    
+    public void ExitClicked()
+    {
+        SceneController.QuitGame();
+    }
 
+    public void ContinueClicked()
+    {
+        if (menuPanel.activeInHierarchy)
+        {
+            menuPanel?.SetActive(false);
+            menuButton?.SetActive(true);
+            Time.timeScale = 1f;
+        }
+    }
+
+    public void MenuPanelClicked()
+    {
+        Time.timeScale = 0f;
+        menuPanel?.SetActive(true);
+        menuButton?.SetActive(false);
+    }
+
+    public void LeaderboardClicked()
+    {
+        if(!leaderboardPanel)
+            return;
+        
+        menuPanel?.SetActive(false);
+        leaderboardPanel?.SetActive(true);
+        
+        var fileDir = DataManager.Instance.CustomDir;
+
+        if (!File.Exists(fileDir))
+        {
+#if UNITY_EDITOR
+            Debug.Log("No records found.");
+#endif
+            
+            for (var i = 0; i < rankTexts.Count; i++)
+            {
+                rankTexts[i].text = "";
+                nameTexts[i].text = "";
+                scoreTexts[i].text = "";
+            }
+
+            return;
+        }
+
+        var json = File.ReadAllText(fileDir);
+        var sortingRanks = JsonUtility.FromJson<PlayerData>(json);
+
+        if(sortingRanks.playerNames.Count == 0)
+        {
+#if UNITY_EDITOR
+            Debug.Log("Leaderboard is empty.");
+#endif
+            return;
+        }
+
+        var playerScore = new List<(string name, float score)>();
+
+        for (var i = 0; i < sortingRanks.playerNames.Count; i++)
+        {
+            playerScore.Add((sortingRanks.playerNames[i], sortingRanks.playerTime[i]));
+        }
+
+        playerScore.Sort((a , b) => b.score.CompareTo(a.score));
+
+        for (var i = 0; i < playerScore.Count && i < rankTexts.Count && i < scoreTexts.Count && i < nameTexts.Count; i++)
+        {
+            rankTexts[i].text = $"{i + 1}.";
+            nameTexts[i].text = playerScore[i].name;
+            
+            var mins = Mathf.FloorToInt(playerScore[i].score / 60f);
+            var secs = Mathf.FloorToInt(playerScore[i].score % 60f);
+            scoreTexts[i].text = $"{mins:00}:{secs:00}";
+        }
+#if UNITY_EDITOR
+        Debug.Log("Leaderboard loaded successfully!");
+#endif
+    }
+
+    public void LeaderboardBackClicked()
+    {
+        leaderboardPanel?.SetActive(false);
+        menuPanel?.SetActive(true);
+    }
+    
     private void ErrorLogger(string message)
     {
 #if UNITY_EDITOR
